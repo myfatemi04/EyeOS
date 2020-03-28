@@ -19,8 +19,12 @@ class Eye(object):
         self.center = None
         self.pupil = None
         self.landmarks = landmarks
+        
+        self.color_frame = original_frame
+        self.bw_frame = cv2.cvtColor(self.color_frame, cv2.COLOR_BGR2GRAY)
 
-        self._analyze(original_frame, landmarks, side, calibration)
+        # cv2.imshow("Original frame", self.color_frame)
+        self._analyze(self.bw_frame, landmarks, side, calibration)
 
     @staticmethod
     def _middle_point(p1, p2):
@@ -36,8 +40,9 @@ class Eye(object):
         black_frame = np.zeros((height, width), np.uint8)
         mask = np.full((height, width), 255, np.uint8)
         cv2.fillPoly(mask, [region], (0, 0, 0))
-        eye = cv2.bitwise_not(black_frame, frame.copy(), mask=mask)
 
+        eye = cv2.bitwise_not(black_frame, frame.copy(), mask=mask)
+        
         margin = 5
         min_x = np.min(region[:, 0]) - margin
         max_x = np.max(region[:, 0]) + margin

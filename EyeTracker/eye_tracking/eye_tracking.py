@@ -50,8 +50,8 @@ class EyeTracker(object):
         try:
             landmarks = self._predictor(frame, faces[0])
             self.landmarks = landmarks
-            self.eye_left = Eye(frame, landmarks, 0, self.calibration)
-            self.eye_right = Eye(frame, landmarks, 1, self.calibration)
+            self.eye_left = Eye(self.frame, landmarks, 0, self.calibration)
+            self.eye_right = Eye(self.frame, landmarks, 1, self.calibration)
 
         except IndexError:
             self.eye_left = None
@@ -100,17 +100,16 @@ class EyeTracker(object):
 
     def is_blinking(self):
         if self.eye_left and self.eye_right:
-            # print((self.left_openness() + self.right_openness()) / 2)
-            return (self.left_openness() + self.right_openness()) / 2 < 0.15
+            return self.left_blinking() and self.right_blinking()
         return False
 
     def left_blinking(self):
         if self.eye_left:
-            return self.left_openness() < 0.11
+            return self.eye_left.pupil.blinking
 
     def right_blinking(self):
         if self.eye_right:
-            return self.right_openness() < 0.11
+            return self.eye_right.pupil.blinking
 
     def get_left_center_offset_bad(self):
         return int(self.eye_left.center[0]), int(self.eye_left.center[1])

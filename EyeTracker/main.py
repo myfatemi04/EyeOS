@@ -11,7 +11,7 @@ from eye_tracking import EyeTracker
 tracker = EyeTracker()
 cap = cv2.VideoCapture(0)
 
-BLINK_WAIT = 1
+BLINK_WAIT = 2.5
 
 def transform_pos(pos, left, right, top, bottom, screen_left, screen_right, screen_bottom, screen_top):
     x, y = pos
