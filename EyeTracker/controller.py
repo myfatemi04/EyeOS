@@ -1,5 +1,7 @@
 import pyautogui as pg
 
+pg.FAILSAFE = False
+
 def move_mouse(x, y):
     pg.moveTo(x, y)
 
