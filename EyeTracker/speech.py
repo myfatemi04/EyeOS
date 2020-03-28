@@ -1,6 +1,8 @@
+import main
+import pyautogui as g
+import speech_recognition as sr
+
 def speech_to_text():
-    import pyautogui as g
-    import speech_recognition as sr
 
     r = sr.recognizer()
     with sr.Microphone() as source:
@@ -9,10 +11,9 @@ def speech_to_text():
 
         if text == "spacebar":
             g.press(" ")
-
-        if text == "recalibrate":
-            recalibrate()
-
+        elif text == "recalibrate":
+            main.recalibrate()
+        elif text == "exit":
+            main.should_stop = True
         else:
             g.typewrite(text)
-            
