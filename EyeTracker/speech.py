@@ -33,7 +33,7 @@ def speech_to_text():
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
                     webbrowser.open('http://' + text.lower().split()[1])  
-                elife text.lower() == "click" : 
+                elif text.lower() == "click" : 
                     g.click()
                 else:
                     g.typewrite(text)
