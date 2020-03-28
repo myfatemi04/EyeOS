@@ -17,6 +17,9 @@ def speech_to_text():
                 print(f'"{text}"')
                 if text == "spacebar":
                     g.press(" ")
+                elif text.startswith("type "):
+                    _, rest = text.split(" ", maxsplit=1)
+                    g.typewrite(rest)
                 elif "calibrate" in text.lower():
                     print("Recalibrating...")
                     globals.should_calibrate = True
@@ -27,5 +30,3 @@ def speech_to_text():
                 elif text.lower() in ["exit", "stop"]:
                     print("You indicated that you wanted to stop...")
                     globals.should_stop = True
-                else:
-                    g.typewrite(text)
