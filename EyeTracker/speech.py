@@ -3,17 +3,22 @@ import pyautogui as g
 import speech_recognition as sr
 
 def speech_to_text():
-
-    r = sr.recognizer()
+    r = sr.Recognizer()
     with sr.Microphone() as source:
         audio = r.listen(source)
-        text = r.recognize_google_cloud(audio, credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
-
-        if text == "spacebar":
-            g.press(" ")
-        elif text == "recalibrate":
-            main.recalibrate()
-        elif text == "exit":
-            main.should_stop = True
+        try:
+            text = r.recognize_google(audio)
+        except sr.UnknownValueError:
+            print("No text input was supplied")
         else:
-            g.typewrite(text)
+            print(text)
+            if text == "spacebar":
+                g.press(" ")
+            elif text == "recalibrate":
+                main.recalibrate()
+            elif text == "exit":
+                main.should_stop = True
+            else:
+                g.typewrite(text)
+
+speech_to_text()
