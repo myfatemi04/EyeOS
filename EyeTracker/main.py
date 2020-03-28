@@ -9,7 +9,7 @@ from eye_tracking import EyeTracker
 tracker = EyeTracker()
 cap = cv2.VideoCapture(0)
 
-BLINK_WAIT = 1
+BLINK_WAIT = 1.5
 
 def transform_pos(pos, left, right, top, bottom, screen_left, screen_right, screen_bottom, screen_top):
     x, y = pos
@@ -66,8 +66,11 @@ def main_thread():
         if is_calibrated:
             if is_blinking:
                 blink_time = time.perf_counter()
+                if blink_time - last_blink_time < BLINK_WAIT:
+                    controller.left_click()
+
                 last_blink_time = blink_time
-            
+                
             if pos:
                 tpos = transform_pos(
                     pos,

@@ -99,9 +99,13 @@ class EyeTracker(object):
         if self.eye_left and self.eye_right:
             return (self.left_openness() + self.right_openness()) / 2 < 0.06
 
-        # if self.pupils_located:
-        #     blinking_ratio = (self.eye_left.blinking + self.eye_right.blinking) / 2
-        #     return blinking_ratio > 7
+    def left_blinking(self):
+        if self.eye_left:
+            return self.left_openness() < 0.06
+
+    def right_blinking(self):
+        if self.eye_right:
+            return self.right_openness() < 0.06
 
     def get_left_center_offset_bad(self):
         return int(self.eye_left.center[0]), int(self.eye_left.center[1])
@@ -182,7 +186,8 @@ class EyeTracker(object):
             self.draw_x(frame, *ints(real_left_center), color)
             self.draw_x(frame, *ints(real_right_center), color)
 
-            for point in [44, 46]:
+            color = (0, 120, 255)
+            for point in [37, 41, 44, 46]:
                 p = self.landmarks.part(point)
                 self.draw_x(frame, p.x, p.y, color)
 
