@@ -5,6 +5,17 @@ from threading import Thread
 
 BLINK_WAIT = 1
 
+def calibrate():
+    print("Look at the upper-left corner")
+    upper_left = get_pos()
+    print("Look at the upper-right corner")
+    upper_right = get_pos()
+    print("Look at the bottom-right corner")
+    bottom_right = get_pos()
+    print("Look at the bottom-left corner")
+    bottom_left = get_pos()
+    return (upper_left, upper_right, bottom_right, bottom_left)
+
 def run_tracker():
     last_blink_time = 0
     while True:
