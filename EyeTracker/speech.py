@@ -33,7 +33,15 @@ def speech_to_text():
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
                     webbrowser.open('http://' + text.lower().split()[1])  
-                elif text.lower() == "click" : 
+                elif text.lower() == "click": 
                     g.click()
+                elif text.lower() == "discord":
+                    os.system("Discord.exe")
+                elif text.lower() == "minecraft":
+                    os.system("Minecraft.exe")
+                elif text.lower() == "pie charm":
+                    os.system("Pycharm.exe")
+                  
+                    
                 else:
                     g.typewrite(text)
