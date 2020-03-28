@@ -24,8 +24,10 @@ def speech_to_text():
                     globals.has_topleft = False
                     globals.msg_bottomright = False
                     globals.msg_topleft = False
-                elif text.lower() in ["exit", "stop"]:
+                elif text.lower() in ["exit", "stop", "quit"]:
                     print("You indicated that you wanted to stop...")
                     globals.should_stop = True
+                elif text.lower().split()[0] == "website":
+                    webbrowser.open('http://' + text.lower().split()[1] + '.com')
                 else:
                     g.typewrite(text)
