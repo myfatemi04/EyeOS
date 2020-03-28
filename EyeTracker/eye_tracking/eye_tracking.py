@@ -5,6 +5,8 @@ import dlib
 from .eye import Eye
 from .calibration import Calibration
 
+def _add_pos(a, b):
+    return a[0] + b[0], a[1] + b[1]
 
 class EyeTracker(object):
     def __init__(self):
@@ -86,6 +88,33 @@ class EyeTracker(object):
             blinking_ratio = (self.eye_left.blinking + self.eye_right.blinking) / 2
             return blinking_ratio > 3.8
 
+    def get_left_center_offset(self):
+        return int(self.eye_left.center[0]), int(self.eye_left.center[1])
+
+    def get_right_center_offset(self):
+        return int(self.eye_right.center[0]), int(self.eye_right.center[1])
+    
+    def get_left_pupil_offset(self):
+        if self.eye_left and self.pupils_located:
+            return self.eye_left.center[0] - self.eye_left.pupil.x, self.eye_left.center[1] - self.eye_left.pupil.y
+
+    def get_right_pupil_offset(self):
+        if self.eye_right and self.pupils_located:
+            return self.eye_right.center[0] - self.eye_right.pupil.x, self.eye_right.center[1] - self.eye_right.pupil.y
+
+    def get_average_offset(self):
+        left = self.get_left_pupil_offset()
+        right = self.get_right_pupil_offset()
+        if left and right:
+            eye_dist = self.get_eye_dist()
+            return (left[0] + right[0])/(2 * eye_dist), (left[1] + right[1])/(2 * eye_dist)
+
+    def get_eye_dist(self):
+        if self.eye_left and self.eye_right:
+            dx = self.eye_left.origin[0] - self.eye_right.origin[0]
+            dy = self.eye_left.origin[1] - self.eye_right.origin[1]
+            return (dx ** 2 + dy ** 2) ** 0.5
+            
     def annotated_frame(self):
         frame = self.frame.copy()
 
@@ -93,6 +122,14 @@ class EyeTracker(object):
             color = (0, 255, 0)
             x_left, y_left = self.pupil_left_coords()
             x_right, y_right = self.pupil_right_coords()
+            cv2.line(frame, (x_left - 5, y_left), (x_left + 5, y_left), color)
+            cv2.line(frame, (x_left, y_left - 5), (x_left, y_left + 5), color)
+            cv2.line(frame, (x_right - 5, y_right), (x_right + 5, y_right), color)
+            cv2.line(frame, (x_right, y_right - 5), (x_right, y_right + 5), color)
+
+            color = (0, 0, 255)
+            x_left, y_left = _add_pos(self.eye_left.origin, self.get_left_center_offset())
+            x_right, y_right = _add_pos(self.eye_right.origin, self.get_right_center_offset())
             cv2.line(frame, (x_left - 5, y_left), (x_left + 5, y_left), color)
             cv2.line(frame, (x_left, y_left - 5), (x_left, y_left + 5), color)
             cv2.line(frame, (x_right - 5, y_right), (x_right + 5, y_right), color)
