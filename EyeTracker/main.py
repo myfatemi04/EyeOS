@@ -58,7 +58,7 @@ speech_thread.start()
 
 if __name__ == "__main__":
     print("Booting EyeOS")
-    
+
     while not should_stop:
         _, frame = cap.read()
         tracker.refresh(frame)
