@@ -1,8 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
+import './index.scss';
+import './styles/tailwind.css';
+import './styles/colors.scss'
+import App from './Components/App/App';
 import * as serviceWorker from './serviceWorker';
+
+import 'circular-std';
 
 ReactDOM.render(
   <React.StrictMode>
