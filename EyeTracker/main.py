@@ -10,7 +10,7 @@ from eye_tracking import EyeTracker
 tracker = EyeTracker()
 cap = cv2.VideoCapture(0)
 
-BLINK_WAIT = 1.5
+BLINK_WAIT = 1
 
 def transform_pos(pos, left, right, top, bottom, screen_left, screen_right, screen_bottom, screen_top):
     x, y = pos
@@ -53,10 +53,10 @@ def recalibrate():
     top_left = bottom_right = msg_topleft = msg_bottomright = left = right = bottom = top = None
     is_calibrated = False
 
-speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True)
-speech_thread.start()
-
 if __name__ == "__main__":
+    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True)
+    speech_thread.start()
+    
     print("Booting EyeOS")
 
     while not should_stop:
@@ -80,11 +80,7 @@ if __name__ == "__main__":
         if is_calibrated:
             if is_blinking:
                 blink_time = time.perf_counter()
-                if blink_time - last_blink_time < BLINK_WAIT:
-                    controller.left_click()
-
                 last_blink_time = blink_time
-
             if pos:
                 tpos = transform_pos(
                     pos,
