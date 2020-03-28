@@ -11,4 +11,8 @@ def left_click():
 def right_click():
     pg.rightClick()
 
-
+def scroll_up():
+    pg.scroll(-2)
+    
+def scroll_down():
+    pg.scroll(2)
