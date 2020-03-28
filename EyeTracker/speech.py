@@ -4,6 +4,7 @@ def speech_to_text():
     import main
     import pyautogui as g
     import speech_recognition as sr
+    import webbrowser
     
     r = sr.Recognizer()
     with sr.Microphone() as source:
@@ -27,6 +28,10 @@ def speech_to_text():
                     globals.has_topleft = False
                     globals.msg_bottomright = False
                     globals.msg_topleft = False
-                elif text.lower() in ["exit", "stop"]:
+                elif text.lower() in ["exit", "stop", "quit"]:
                     print("You indicated that you wanted to stop...")
                     globals.should_stop = True
+                elif text.lower().startswith("website "):
+                    webbrowser.open('http://' + text.lower().split()[1])
+                else:
+                    g.typewrite(text)
