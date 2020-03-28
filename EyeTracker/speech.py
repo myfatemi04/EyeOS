@@ -1,3 +1,5 @@
+import globals
+
 def speech_to_text():
     import main
     import pyautogui as g
@@ -12,12 +14,18 @@ def speech_to_text():
             except sr.UnknownValueError:
                 print("No text input was supplied")
             else:
-                print(text)
+                print(f'"{text}"')
                 if text == "spacebar":
                     g.press(" ")
                 elif text == "recalibrate":
-                    main.recalibrate()
+                    print("Recalibrating...")
+                    globals.should_calibrate = True
+                    globals.has_bottomright = False
+                    globals.has_topleft = False
+                    globals.msg_bottomright = False
+                    globals.msg_topleft = False
                 elif text == "exit":
-                    main.should_stop = True
+                    print("You indicated that you wanted to stop...")
+                    globals.should_stop = True
                 else:
                     g.typewrite(text)
