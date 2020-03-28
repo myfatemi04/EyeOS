@@ -37,20 +37,14 @@ def main_thread():
     bottom = None
     top = None
 
-    # top_left = True
-    # bottom_right = True
-
-    # left = -2.25
-    # top = -1.5
-
-    # right = 7.0
-    # bottom = 1.25
-
     screen_left = 0
     screen_top = 0
     screen_right, screen_bottom = controller.pg.size()
 
     last_valid_pos = None
+
+    blink_min_len = 1
+    frame_blinks = [0 for x in range(blink_min_len)]
     while True:
         _, frame = cap.read()
         tracker.refresh(frame)
@@ -60,11 +54,18 @@ def main_thread():
         is_blinking = tracker.is_blinking()
         pos = tracker.get_average_offset()
 
+        # print("LEFT OPENNESS: ", tracker.left_openness(), "BLINKING: ", is_blinking)
+        if is_blinking:
+            print("BLINK")
+
+        if is_blinking is None:
+            frame_blinks.append(0)
+        else:
+            frame_blinks.append(int(is_blinking))
+
         if is_calibrated:
             if is_blinking:
                 blink_time = time.perf_counter()
-                if not last_frame_blinking and blink_time - last_blink_time < BLINK_WAIT:
-                    pass # controller.left_click()
                 last_blink_time = blink_time
             
             if pos:
@@ -108,7 +109,7 @@ def main_thread():
             last_valid_pos = pos
 
         last_frame_blinking = is_blinking
-
+            
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     cap.release()
