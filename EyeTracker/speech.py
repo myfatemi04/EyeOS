@@ -32,6 +32,8 @@ def speech_to_text():
                     print("You indicated that you wanted to stop...")
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
-                    webbrowser.open('http://' + text.lower().split()[1])
+                    webbrowser.open('http://' + text.lower().split()[1])  
+                elife text.lower() == "click" : 
+                    g.click()
                 else:
                     g.typewrite(text)
