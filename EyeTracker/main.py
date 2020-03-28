@@ -66,6 +66,9 @@ if __name__ == "__main__":
         cv2.imshow("Tracker", frame)
 
         is_blinking = tracker.is_blinking()
+        if is_blinking and not last_frame_blinking:
+            print("Blink")
+
         pos = tracker.get_average_offset()
         
         if is_blinking is None:
@@ -77,7 +80,7 @@ if __name__ == "__main__":
             if is_blinking:
                 blink_time = time.perf_counter()
                 if blink_time - last_blink_time < BLINK_WAIT:
-                    controller.left_click()
+                    pass#controller.left_click()
 
                 last_blink_time = blink_time
             if pos:
@@ -92,7 +95,7 @@ if __name__ == "__main__":
                     screen_bottom,
                     screen_top
                 )
-                
+
                 int_x = int(tpos[0])
                 int_y = int(tpos[1])
                 controller.move_mouse(int_x, int_y)
@@ -104,7 +107,7 @@ if __name__ == "__main__":
                     globals.msg_topleft = True
                 if last_valid_pos and is_blinking and not last_frame_blinking:
                     left, top = last_valid_pos
-                    print("Saved Top Left at ", top_left)
+                    print("Saved Top Left at ", left, top)
                     globals.has_topleft = True
             elif not globals.has_bottomright:
                 if not globals.msg_bottomright:
