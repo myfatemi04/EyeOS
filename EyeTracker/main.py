@@ -80,7 +80,7 @@ if __name__ == "__main__":
             if is_blinking:
                 blink_time = time.perf_counter()
                 if blink_time - last_blink_time < BLINK_WAIT:
-                    pass#controller.left_click()
+                    controller.left_click()
 
                 last_blink_time = blink_time
             if pos:

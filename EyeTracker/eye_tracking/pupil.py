@@ -34,7 +34,7 @@ class Pupil(object):
         else:
             self.blinking = False
 
-        print(num_black)
+        # print(num_black)
 
         try:
             moments = cv2.moments(contours[-2])
