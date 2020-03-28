@@ -71,6 +71,13 @@ def main_thread():
 
                 last_blink_time = blink_time
                 
+            if tracker.is_right():
+                controller.scroll_up()
+                
+            if tracker.is_left()
+                controller.scroll_down()
+                
+                
             if pos:
                 tpos = transform_pos(
                     pos,
