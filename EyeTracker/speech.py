@@ -4,6 +4,7 @@ def speech_to_text():
     import main
     import pyautogui as g
     import speech_recognition as sr
+    import webbrowser
     
     r = sr.Recognizer()
     with sr.Microphone() as source:
