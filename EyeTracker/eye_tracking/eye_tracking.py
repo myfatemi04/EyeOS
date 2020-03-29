@@ -118,6 +118,18 @@ class EyeTracker(object):
             y = self.eye_right.origin[1] + self.eye_right.pupil.y
             return (x, y)
 
+    def left_trace(self):
+        if self.pupils_located:
+            x = self.eye_left.origin[0] + self.eye_left.pupil.x
+            y = self.landmarks.part(37).y
+            return x, y
+    
+    def right_trace(self):
+        if self.pupils_located:
+            x = self.eye_right.origin[0] + self.eye_right.pupil.x
+            y = self.landmarks.part(44).y
+            return x, y
+
     def horizontal_ratio(self):
         if self.pupils_located:
             pupil_left = self.eye_left.pupil.x / (self.eye_left.center[0] * 2 - 10)
@@ -188,10 +200,22 @@ class EyeTracker(object):
             pupil_exact = self.pupil_right_coords()
             center_exact = self.right_center()
             return center_exact[0] - pupil_exact[0], center_exact[1] - pupil_exact[1]
+    
+    def get_left_offset(self):
+        if self.eye_left and self.pupils_located:
+            left_trace = self.left_trace()
+            left_center = self.left_center()
+            return left_center[0] - left_trace[0], left_center[1] - left_trace[1]
+
+    def get_right_offset(self):
+        if self.eye_right and self.pupils_located:
+            right_trace = self.right_trace()
+            right_center = self.right_center()
+            return right_center[0] - right_trace[0], right_center[1] - right_trace[1]
         
     def get_average_offset(self):
-        left = self.get_left_pupil_offset()
-        right = self.get_right_pupil_offset()
+        left = self.get_left_offset()
+        right = self.get_right_offset()
         if left and right:
             eye_dist = self.get_eye_dist()
             return (left[0] + right[0])/(2 * eye_dist), (left[1] + right[1])/(2 * eye_dist)
@@ -230,8 +254,8 @@ class EyeTracker(object):
 
         if self.pupils_located:
             color = (0, 255, 0)
-            x_left, y_left = self.pupil_left_coords()
-            x_right, y_right = self.pupil_right_coords()
+            x_left, y_left = self.left_trace() # self.pupil_left_coords()
+            x_right, y_right = self.right_trace() # self.pupil_right_coords()
             self.draw_x(frame, x_left, y_left, color)
             self.draw_x(frame, x_right, y_right, color)
 

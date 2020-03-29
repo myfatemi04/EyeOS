@@ -13,8 +13,8 @@ has_nose_center = False
 msg_movenose = False
 has_nose_move = False
 
-mode = ""
-eye_pos_mode = "relative"
+mode = "eye"
+eye_pos_mode = "absolute"
 
 said_done = False
 said_centered = False

@@ -81,8 +81,9 @@ if __name__ == "__main__":
     speech_thread.start()
     
     print("Booting EyeOS")
-
-    print("What mode do you want? Nose mode or eye mode?")
+    
+    if not globals.mode:
+        print("What mode do you want? Nose mode or eye mode?")
     while not globals.mode:
         time.sleep(0.5)
 
@@ -126,15 +127,15 @@ if __name__ == "__main__":
                         int_pos = int(tpos[0]), int(tpos[1])
                         pg.moveTo(int_pos[0], int_pos[1])
                     else:
-                        if pos[0] < left:
+                        if pos[0] < left//2:
                             pg.moveRel(-45, 0)
-                        elif pos[0] > right:
+                        elif pos[0] > right//2:
                             pg.moveRel(45, 0)
                         
                         if pos[1] > top:
-                            pg.moveRel(0, 45)
-                        elif pos[1] < bottom:
                             pg.moveRel(0, -45)
+                        elif pos[1] < bottom:
+                            pg.moveRel(0, 45)
             else:
                 if not globals.has_topleft:
                     if not globals.msg_topleft:

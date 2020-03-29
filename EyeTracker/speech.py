@@ -1,5 +1,6 @@
 import globals
-# import query
+import subprocess
+import platform
 
 custom_keys = {
     "pipe": "|",
@@ -123,6 +124,8 @@ def speech_to_text():
                     if slug in custom_keys:
                         key_symbol = custom_keys[slug]
                         g.press(key_symbol)
+                    elif slug in g.KEY_NAMES:
+                        g.press(slug)
                     else:
                         print("Key not found: ", key)
                 elif lower.startswith("hold "):
@@ -152,7 +155,10 @@ def speech_to_text():
                         print("No files found!")
                     else:
                         best_file, _ = found[0]
-                        os.system(f"\"{best_file}\"")
+                        print(best_file)
+                        if platform.system() == "Windows":
+                            os.system(f"start \"\" \"{best_file}\"")
+                        
                 elif "backspace" in lower:
                     g.press("backspace")
                 elif 'center' in lower or 'censor' in lower:
