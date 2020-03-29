@@ -103,24 +103,23 @@ if __name__ == "__main__":
             ## Calibrate here
             if not globals.has_topleft:
                 if not globals.msg_topleft:
-                    print("Look at the top left and blink")
+                    print("Look at the top left and say \"done\".")
                     globals.msg_topleft = True
-                if last_valid_pos and is_blinking and not last_frame_blinking:
+                if globals.said_done:
                     left, top = last_valid_pos
                     print("Saved Top Left at ", left, top)
                     globals.has_topleft = True
+                    globals.said_done = False
             elif not globals.has_bottomright:
                 if not globals.msg_bottomright:
-                    print("Look at the bottom right and blink")
+                    print("Look at the bottom right and say \"done\".")
                     globals.msg_bottomright = True
-                if last_valid_pos and is_blinking and not last_frame_blinking:
+                if globals.said_done:
                     right, bottom = last_valid_pos
-                    if right == left or bottom == top:
-                        print("Try again?")
-                    else:
-                        globals.has_bottomright = True
-                        print("Saved Bottom Right at ", right, bottom)
-                        globals.should_calibrate = False
+                    globals.has_bottomright = True
+                    print("Saved Bottom Right at ", right, bottom)
+                    globals.should_calibrate = False
+                    globals.said_done = False
 
         if pos:
             last_valid_pos = pos

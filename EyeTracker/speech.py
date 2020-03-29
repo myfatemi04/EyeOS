@@ -11,7 +11,7 @@ def speech_to_text():
         while True:
             audio = r.listen(source)
             try:
-                text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read())
+                text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
             except sr.UnknownValueError:
                 print("No text input was supplied")
             else:
@@ -33,5 +33,7 @@ def speech_to_text():
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
                     webbrowser.open('http://' + text.lower().split()[1])
+                elif text.lower() == 'done':
+                    globals.said_done = True
                 else:
                     g.typewrite(text)
