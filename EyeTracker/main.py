@@ -233,5 +233,5 @@ def start_speech_to_text():
 if __name__ == "__main__":
     if sys.argv[1] == "eye":
         start_tracker("eye")
-    elif sys.argv[1] == "sst":
+    elif sys.argv[1] == "stt":
         start_speech_to_text()
