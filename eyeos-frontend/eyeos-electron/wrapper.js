@@ -4,7 +4,8 @@ const path = require("path")
 class EyeOS {
   start(event) {
     let options = {}
-    if(process.platform === 'darwin' || process.platform === '') {
+    if(process.platform === 'darwin' || process.platform === 'linux') {
+      console.log("using a manual path to python3")
       options = {
         pythonPath: '/usr/bin/python3',
         pythonOptions: ['-u'],
@@ -27,6 +28,7 @@ class EyeOS {
         event.reply('eyeOS-startup-log', {
           err: "An error occured"
         });
+        this.python_process.kill('SIGINT');
         console.log(err);
       }
       console.log("finished");
