@@ -106,8 +106,8 @@ if __name__ == "__main__":
                     screen_top
                 )
 
-                last_x = int_x = int((2 * last_x + tpos[0])/3)
-                last_y = int_y = int((2 * last_y + tpos[1])/3)
+                last_x = int_x = int(tpos[0])
+                last_y = int_y = int(tpos[1])
 
                 controller.move_mouse(int_x, int_y)
         else:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                 if not globals.msg_topleft:
                     print("Look at the top left and say \"done\".")
                     globals.msg_topleft = True
-                if globals.said_done:
+                if globals.said_done or (left_blink and not last_left_blink):
                     left, top = last_valid_pos
                     print("Saved Top Left at ", left, top)
                     globals.has_topleft = True
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 if not globals.msg_bottomright:
                     print("Look at the bottom right and say \"done\".")
                     globals.msg_bottomright = True
-                if globals.said_done:
+                if globals.said_done or (left_blink and not last_left_blink):
                     right, bottom = last_valid_pos
                     globals.has_bottomright = True
                     print("Saved Bottom Right at ", right, bottom)

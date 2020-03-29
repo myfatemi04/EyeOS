@@ -14,11 +14,10 @@ def speech_to_text():
     with sr.Microphone() as source:
         while True:
             audio = r.listen(source)
-            # print(dir(audio))
             try:
                 text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
             except sr.UnknownValueError as e:
-                print(e)
+                pass
             else:
                 print(f'"{text}"')
                 if text == "spacebar":
