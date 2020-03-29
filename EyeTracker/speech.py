@@ -4,6 +4,7 @@ import platform
 import numpy as np
 import speech_recognition as sr
 import time
+import pyautogui as g
 
 custom_keys = {
     "pipe": "|",
@@ -60,7 +61,17 @@ custom_keys = {
     "enter": "\n"
 }
 
-def speech_to_text(launcher):
+def press_key(key, cmd=g.press):
+    slug = key.replace(" ", "").lower()
+    if slug in custom_keys:
+        key_symbol = custom_keys[slug]
+        cmd(key_symbol)
+    elif slug in g.KEY_NAMES:
+        cmd(slug)
+    else:
+        print("Key not found: ", key)
+
+def speech_to_text(launcher=1):
     r = sr.Recognizer()
     m = sr.Microphone()
     with m as source:
@@ -71,13 +82,11 @@ def speech_to_text(launcher):
 
 def process_audio(r, audio, launcher):
     import main
-    import pyautogui as g
     import webbrowser
     import os
     import start_menu
 
-    last_scrollup = 400
-    last_scrolldown = 400
+    typewrite_lengths = []
 
     try:
         text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
@@ -86,22 +95,80 @@ def process_audio(r, audio, launcher):
     
     print(f'Microphone received: "{text}"')
     lower = text.lower()
-    if text == "spacebar":
-        g.press(" ")
-    elif text.startswith("type "):
+
+    if lower.startswith("type "):
         _, rest = text.split(" ", maxsplit=1)
         g.typewrite(rest)
-    elif "calibrate" in lower:
-        print("Recalibrating...")
-        settings.recalibrate()
+        typewrite_lengths.append(len(rest))
+    
+    # keyboard shortcuts
+    if lower == 'undo':
+        g.hotkey('ctrl', 'z')
+    elif lower == 'copy':
+        g.hotkey('ctrl', 'c')
+    elif lower == 'paste' or lower == 'pace':
+        g.hotkey('ctrl', 'v')
+    elif lower == 'cut':
+        g.hotkey('ctrl', 'x')
+    elif lower == 'undo typing':
+        if typewrite_lengths:
+            g.press("backspace", typewrite_lengths[-1])
+            typewrite_lengths = typewrite_lengths[:-1]
+    elif lower.replace(" ", "") == 'fullscreen':
+        g.press('f11')
+
+    # key controls
+    if lower.startswith("press "):
+        key = lower[6:]
+        press_key(key)
+    elif lower.startswith("hold "):
+        key = lower[5:]
+        press_key(key, cmd=g.keyDown)
+    elif lower.startswith("release "):
+        key = lower[8:]
+        press_key(key, cmd=g.keyUp)
+
+    # hotkey shortcuts
+    elif "control" in lower or "shift" in lower or "ctrl" in lower or "alt" in lower or "windows" in lower:
+        keys = lower.split()
+        keys = ["ctrl" if key=="control" else key for key in keys]
+        g.hotkey(*keys)
+    elif lower.replace(" ", "") in custom_keys:
+        g.press(custom_keys[lower.replace(" ", "")])
+    elif lower.replace(" ", "") in g.KEY_NAMES:
+        g.press(lower.replace(" ", ""))
+    
+    # recalibrate the tracker
+    if "calibrate" in lower:
+        if settings.tracker_active:
+            print("Recalibrating...")
+            settings.recalibrate()
+    # exit the tracker
     elif lower in ["exit", "stop", "quit"]:
-        print("You indicated that you wanted to stop...")
-        settings.tracker_active = False
-    elif lower.startswith("website "):
-        webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
+        if settings.tracker_active:
+            print("You indicated that you wanted to stop...")
+            settings.tracker_active = False
+    
+    # set tracker mode
+    if lower in ['eye mode', 'i mode', 'start eye tracker', 'start i tracker']:
+        if not settings.tracker_active:
+            main.start_tracker('eye')
+        else:
+            settings.mode = 'eye'
+            settings.recalibrate()
+    elif lower in ['nose mode', 'snooze mode', 'start nose tracker']:
+        if not settings.tracker_active:
+            main.start_tracker('nose')
+        else:
+            settings.mode = 'nose'
+            settings.recalibrate()
+    
+    # part of calibration
     elif lower == "ready":
         settings.said_ready = True
-    elif lower == "click": 
+
+    # mouse control
+    if lower == "click" or lower == "quick": 
         g.leftClick()
     elif lower == "right click":
         g.rightClick()
@@ -109,46 +176,20 @@ def process_audio(r, audio, launcher):
         g.leftClick()
     elif lower == "double click":
         g.doubleClick()
-    elif lower == "scroll down":
-        g.scroll(-last_scrolldown)
-        if last_scrolldown < 3200:
-            last_scrolldown *= 2
-    elif lower == "scroll up":
-        g.scroll(last_scrollup)
-        if last_scrollup < 3200:
-            last_scrollup *= 2
-    elif lower.startswith("press "):
-        key = text[6:]
-        slug = key.replace(" ", "").lower()
-        if slug in custom_keys:
-            key_symbol = custom_keys[slug]
-            g.press(key_symbol)
-        elif slug in g.KEY_NAMES:
-            g.press(slug)
-        else:
-            print("Key not found: ", key)
-    elif lower.startswith("hold "):
-        key = text[5:]
-        slug = key.replace(" ", "").lower()
-        if slug in custom_keys:
-            key_symbol = custom_keys[slug]
-            g.keyDown(key_symbol)
-        elif slug in g.KEY_NAMES:
-            g.keyDown(slug)
-        else:
-            print("Key not found: ", key)
-    elif lower.startswith("release "):
-        key = text[8:]
-        slug = key.replace(" ", "").lower()
-        if slug in custom_keys:
-            key_symbol = custom_keys[slug]
-            g.keyDown(key_symbol)
-        elif slug in g.KEY_NAMES:
-            g.keyDown(slug)
-        else:
-            print("Key not found: ", key)
-    elif text.startswith("open ") and launcher == 1:
-        o, search = text.split(" ", maxsplit=1)
+
+    # control the mode (scrolling or mouse movement)
+    if lower == "scroll":
+        settings.movement_mode = "scroll"
+    elif lower == "mouse" or lower == "cursor":
+        settings.movement_mode = "cursor"
+    
+    # application controls
+    # open a website
+    if lower.startswith("website "):
+        webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
+    # run a program
+    elif launcher == 1 and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
+        _, search = lower.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if not found:
             print("No files found!")
@@ -157,32 +198,10 @@ def process_audio(r, audio, launcher):
             print("Opening", best_file, "...")
             if platform.system() == "Windows":
                 os.system(f"start \"\" \"{best_file}\"")
-            
-    elif "backspace" in lower:
-        g.press("backspace")
-    elif 'center' in lower or 'censor' in lower:
-        settings.said_centered = True
-    elif lower.replace(" ", "") == 'fullscreen':
-        g.press('f11')
-    elif lower == 'eye mode' or lower == 'i mode':
-        settings.mode = 'eye'
-        settings.recalibrate()
-    elif lower in ['nose mode', 'snooze mode']:
-        settings.mode = 'nose'
-        settings.recalibrate()
-    elif "control" in lower or "shift" in lower or "ctrl" in lower or "alt" in lower:
-        keys = text.split()
-        keys = ["ctrl" if key=="control" else key for key in keys]
-        g.hotkey(*keys)
-    elif lower.replace(" ", "") in custom_keys:
-        g.press(custom_keys[lower.replace(" ", "")])
-    elif lower.replace(" ", "") in g.KEY_NAMES:
-        g.press(lower.replace(" ", ""))
-    
-    if lower != 'scroll up':
-        last_scrollup = 400
-    if lower != 'scroll down':
-        last_scrolldown = 400
+    # search google
+    elif lower.startswith("google "):
+        _, query = lower.split(" ", maxsplit=1)
+        webbrowser.open('http://www.google.com/search?q=' + query)
 
 if __name__ == "__main__":
     speech_to_text(1)
