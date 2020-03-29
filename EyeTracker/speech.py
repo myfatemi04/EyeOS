@@ -71,16 +71,16 @@ def press_key(key, cmd=g.press):
     else:
         print("Key not found: ", key)
 
-def speech_to_text():
+def speech_to_text(launcher=1):
     r = sr.Recognizer()
     m = sr.Microphone()
     with m as source:
         r.adjust_for_ambient_noise(source)
         while True:
             audio = r.listen(source)
-            process_audio(r, audio)
+            process_audio(r, audio, launcher)
 
-def process_audio(r, audio):
+def process_audio(r, audio, launcher):
     import main
     import webbrowser
     import os
@@ -188,7 +188,7 @@ def process_audio(r, audio):
     if lower.startswith("website "):
         webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
     # run a program
-    elif lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
+    elif launcher == 1 and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
         _, search = lower.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if not found:
@@ -204,4 +204,4 @@ def process_audio(r, audio):
         webbrowser.open('http://www.google.com/search?q=' + query)
 
 if __name__ == "__main__":
-    speech_to_text()
+    speech_to_text(1)
