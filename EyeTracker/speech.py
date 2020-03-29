@@ -60,16 +60,16 @@ custom_keys = {
     "enter": "\n"
 }
 
-def speech_to_text():
+def speech_to_text(launcher):
     r = sr.Recognizer()
     m = sr.Microphone()
     with m as source:
         r.adjust_for_ambient_noise(source)
         while True:
             audio = r.listen(source)
-            process_audio(r, audio)
+            process_audio(r, audio, launcher)
 
-def process_audio(r, audio):
+def process_audio(r, audio, launcher):
     import main
     import pyautogui as g
     import webbrowser
@@ -147,7 +147,7 @@ def process_audio(r, audio):
             g.keyDown(slug)
         else:
             print("Key not found: ", key)
-    elif text.startswith("open "):
+    elif text.startswith("open ") and launcher == 1:
         o, search = text.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if not found:
@@ -185,4 +185,4 @@ def process_audio(r, audio):
         last_scrolldown = 400
 
 if __name__ == "__main__":
-    speech_to_text()
+    speech_to_text(1)
