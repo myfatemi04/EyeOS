@@ -1,4 +1,5 @@
 import globals
+import query
 
 def speech_to_text():
     import main
@@ -61,6 +62,8 @@ def speech_to_text():
                     os.system("Minecraft.exe")
                 elif text.lower() == "pie charm":
                     os.system("Pycharm.exe")
+                elif text.lower().startswith("query"):
+                    print(' '.join(query.webQuery(text.lower.split()[1:]))
 
                 if text.lower() != 'scroll up':
                     last_scrollup = 400
