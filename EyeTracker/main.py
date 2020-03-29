@@ -47,6 +47,9 @@ last_valid_pos = None
 blink_min_len = 1
 frame_blinks = [0 for x in range(blink_min_len)]
 
+last_left_blink = False
+last_right_blink = False
+
 def recalibrate():
     global top_left, bottom_right, msg_topleft, msg_bottomright, left, right, bottom, top, is_calibrated
     top_left = bottom_right = msg_topleft = msg_bottomright = left = right = bottom = top = None
@@ -58,16 +61,24 @@ if __name__ == "__main__":
     
     print("Booting EyeOS")
 
-    while not globals.should_stop:
+    last_x, last_y = controller.pg.position()
 
+    while not globals.should_stop:
         _, frame = cap.read()
         tracker.refresh(frame)
         frame = tracker.annotated_frame()
         cv2.imshow("Tracker", frame)
 
         is_blinking = tracker.is_blinking()
+        left_blink = tracker.left_blinking()
+        right_blink = tracker.right_blinking()
         if is_blinking and not last_frame_blinking:
             print("Blink")
+        else:
+            if left_blink and not last_left_blink:
+                print("Left blink")
+            if right_blink and not last_right_blink:
+                print("Right blink")
 
         pos = tracker.get_average_offset()
         
@@ -75,14 +86,13 @@ if __name__ == "__main__":
             frame_blinks.append(0)
         else:
             frame_blinks.append(int(is_blinking))
-
         if not globals.should_calibrate:
-            if is_blinking:
-                blink_time = time.perf_counter()
-                if blink_time - last_blink_time < BLINK_WAIT:
+            if not is_blinking:
+                if left_blink and not last_left_blink:
+                    controller.right_click()
+                elif right_blink and not last_right_blink:
                     controller.left_click()
 
-                last_blink_time = blink_time
             if pos:
                 tpos = transform_pos(
                     pos,
@@ -96,8 +106,9 @@ if __name__ == "__main__":
                     screen_top
                 )
 
-                int_x = int(tpos[0])
-                int_y = int(tpos[1])
+                last_x = int_x = int((2 * last_x + tpos[0])/3)
+                last_y = int_y = int((2 * last_y + tpos[1])/3)
+
                 controller.move_mouse(int_x, int_y)
         else:
             ## Calibrate here
@@ -125,7 +136,9 @@ if __name__ == "__main__":
             last_valid_pos = pos
 
         last_frame_blinking = is_blinking
-            
+        last_left_blink = left_blink
+        last_right_blink = right_blink
+
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     cap.release()
