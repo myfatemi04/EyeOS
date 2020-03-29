@@ -1,11 +1,15 @@
 import React from 'react';
+
 class SettingsPage extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       eyeTrackingOn: false,
+      leftCalibrated: false,
+      rightCalibrated: false, 
     }
     this.toggleEyeOS = this.toggleEyeOS.bind(this);
+    this.processLog = this.processLog.bind(this);
   }
 
   componentDidMount() {
@@ -15,7 +19,7 @@ class SettingsPage extends React.Component {
   toggleEyeOS() {
     window.ipcRenderer.on("eyeOS-startup-log", (event, arg) => {
       if(arg.err) console.log(arg.err);
-      else console.log(arg.msg)
+      else this.processLog(arg.msg);
     })
     window.ipcRenderer.on("eyeOS-kill", (event, arg) => {
       console.log("Turned off eyeOS")
@@ -29,10 +33,31 @@ class SettingsPage extends React.Component {
         eyeTrackingOn: true
       })
     })
-    if(!this.state.eyeTrackingOn)
+    if(!this.state.eyeTrackingOn) {
       window.ipcRenderer.send('start-eyeOS', true);
-    else 
+      this.props.alert("Starting", "Enabling EyeOS")
+    } else {
       window.ipcRenderer.send('stop-eyeOS', true)
+    }
+  }
+
+  processLog(log) {
+    if(log.includes("Booting EyeOS")) {
+      this.props.alert("Starting", "Enabling EyeOS")
+    } else if(log.includes("Look at the top left")) {
+      this.props.alert("Calibrating", "Look at the top left of your screen and blink");
+    } else if(log.includes("Look at the bottom right")) {
+      this.props.alert("Calibrating", "Look at the bottom right of your screen and blink");
+    } else if(log.includes("Saved Top Left")) {
+      let newState = Object.assign({}, this.state);
+      newState.leftCalibrated = true;
+      this.setState(newState);
+    } else if(log.includes("Saved Bottom Right")) {
+      let newState = Object.assign({}, this.state);
+      newState.leftCalibrated = true;
+      this.setState(newState);
+      this.props.disableAlert();
+    }
   }
 
   render() {
