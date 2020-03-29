@@ -3,9 +3,12 @@ const path = require("path")
 
 class EyeOS {
   start(event) {
-    let options = {
-      pythonPath: '/usr/bin/python3',
-      pythonOptions: ['-u'],
+    let options = {}
+    if(process.platform === 'darwin' || process.platform === '') {
+      options = {
+        pythonPath: '/usr/bin/python3',
+        pythonOptions: ['-u'],
+      }
     }
   
     console.log(path.join(__dirname, "../../EyeTracker/main.py"))
