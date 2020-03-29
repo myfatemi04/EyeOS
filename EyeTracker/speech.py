@@ -93,6 +93,7 @@ def process_audio(r, audio):
         g.typewrite(rest)
     elif "calibrate" in lower:
         print("Recalibrating...")
+        settings.recalibrate()
     elif lower in ["exit", "stop", "quit"]:
         print("You indicated that you wanted to stop...")
         settings.tracker_active = False
@@ -153,7 +154,7 @@ def process_audio(r, audio):
             print("No files found!")
         else:
             best_file, _ = found[0]
-            print(best_file)
+            print("Opening", best_file, "...")
             if platform.system() == "Windows":
                 os.system(f"start \"\" \"{best_file}\"")
             
