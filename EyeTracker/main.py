@@ -10,13 +10,6 @@ from eye_tracking import EyeTracker, NoseTracker
 
 pg.FAILSAFE = False
 
-# initialize the Eye Tracker
-eye_tracker = EyeTracker()
-nose_tracker = NoseTracker()
-cap = cv2.VideoCapture(0)
-
-BLINK_WAIT = 2.5
-
 def dist(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
@@ -32,51 +25,31 @@ def transform_pos(pos, left, right, top, bottom, screen_left, screen_right, scre
 
     return width_prop * screen_width + screen_left, height_prop * screen_height + screen_top
 
-last_blink_time = 0
-last_frame_blinking = False
-is_calibrated = False
-top_left = None
-bottom_right = None
-msg_topleft = False
-msg_bottomright = False
 
-left = None
-right = None
-bottom = None
-top = None
+def run_main():
+    left = right = bottom = top = None
 
-screen_left = 0
-screen_top = 0
-screen_right, screen_bottom = pg.size()
+    screen_left = 0
+    screen_top = 0
+    screen_right, screen_bottom = pg.size()
 
-last_valid_pos = None
+    last_valid_pos = None
 
-blink_min_len = 1
-frame_blinks = [0 for x in range(blink_min_len)]
+    blink_min_len = 1
+    frame_blinks = [0 for x in range(blink_min_len)]
 
-last_left_blink = False
-last_right_blink = False
+    nose_center_x = nose_center_x = None
 
-nose_center_x = None
-nose_center_y = None
+    nose_x_move = nose_y_move = None
 
-nose_x_move = None
-nose_y_move = None
+    # initialize the Eye Tracker
+    eye_tracker = EyeTracker()
+    nose_tracker = NoseTracker()
+    cap = cv2.VideoCapture(0)
 
-def recalibrate():
-    global top_left, bottom_right, msg_topleft, msg_bottomright, left, right, bottom, top, is_calibrated
-    global nose_center_x, nose_center_y, nose_x_move, nose_y_move
-    top_left = bottom_right = msg_topleft = msg_bottomright = left = right = bottom = top = None
-    nose_center_x = nose_center_y = nose_x_move = nose_y_move = None
-    globals.msg_center = False
-    globals.msg_movenose = False
-    globals.said_centered = False
-    globals.should_calibrate = True
+    BLINK_WAIT = 2.5
 
-i = 0
-start_nose_move = 0
-
-if __name__ == "__main__":
+    i = 0
     speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True)
     speech_thread.start()
     
@@ -87,7 +60,7 @@ if __name__ == "__main__":
     while not globals.mode:
         time.sleep(0.5)
 
-    last_x, last_y = pg.position()
+    # last_x, last_y = pg.position()
 
     while not globals.should_stop:
         i += 1
@@ -126,7 +99,7 @@ if __name__ == "__main__":
 
                         int_pos = int(tpos[0]), int(tpos[1])
                         pg.moveTo(int_pos[0], int_pos[1])
-                    else:
+                    elif globals.eye_pos_mod == "relative":
                         if pos[0] < left//2:
                             pg.moveRel(-45, 0)
                         elif pos[0] > right//2:
@@ -223,3 +196,5 @@ if __name__ == "__main__":
 
     cap.release()
 
+if __name__ == "__main__":
+    run_main()
