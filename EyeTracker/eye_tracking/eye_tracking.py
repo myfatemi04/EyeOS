@@ -2,6 +2,7 @@ from __future__ import division
 import os
 import cv2
 import dlib
+import numpy as np
 from .eye import Eye
 from .calibration import Calibration
 
@@ -40,23 +41,27 @@ class NoseTracker:
         if len(faces) > 0:
             self.landmarks = self._predictor(frame, faces[0])
         else:
-            return
+            self.landmarks = None
 
     def find_nose(self):
-        nose_index = 34
+        nose_index = 33
         if self.landmarks:
-            return self.landmarks.part(nose_index)
+            p = self.landmarks.part(nose_index)
+            return p.x, p.y
 
     def get_points(self, indexes):
         a = []
         for index in indexes:
             p = self.landmarks.part(index)
             a.append((p.x, p.y))
+        return np.array(a)
 
     def annotated_frame(self):
         frame = self.frame.copy()
         if self.landmarks:
-            cv2.polylines(frame, self.get_points([32, 33, 34, 35, 36]), True, (0, 255, 0))
+            cv2.polylines(frame, [self.get_points([31, 32, 33, 34, 35])], True, (0, 255, 0))
+            pts = self.landmarks.part(33)
+            cv2.line(frame, (pts.x, pts.y), (pts.x, pts.y), (0, 255, 0))
         return frame
 
 class EyeTracker(object):
