@@ -59,13 +59,22 @@ class EyeOS {
 class SpeechToText {
   start(event) {
     let options = {}
-    if(process.platform === 'darwin' || process.platform === 'linux') {
+    if(process.platform === 'linux') {
       console.log("using a manual path to python3")
       options = {
         pythonPath: '/usr/bin/python3',
         pythonOptions: ['-u'],
       }
       options.args = ['typing']
+    }
+
+    if(process.platform === 'darwin') {
+      console.log("using a manual OSX path to python3")
+      options = {
+        pythonPath: '/usr/local/bin/python3',
+        pythonOptions: ['-u'],
+      }
+      options.args = ['notyping']
     }
   
     console.log(path.join(__dirname, "../../EyeTracker/main.py"))
