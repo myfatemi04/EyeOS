@@ -69,15 +69,15 @@ def run_main():
         frame = face_tracker.annotated_frame()
         cv2.imshow("EyeOS Tracker", frame)
 
-        if settings.mode == 'eye':  ### EYE TRACKING ###
-            if i % 100 == 0:
-                face_tracker.calibration.recalibrate()
+        if face_tracker.found_face():
+            if settings.mode == 'eye':  ### EYE TRACKING ###
+                if i % 100 == 0:
+                    face_tracker.calibration.recalibrate()
 
-            # find the offset of the pupils
-            pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
-            
-            if settings.is_calibrated:
-                if pos:
+                # find the offset of the pupils
+                pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
+                
+                if settings.is_calibrated:
                     last_valid_pos = pos
                     if settings.eye_pos_mode == "absolute":
                         ## absolute positioning
@@ -104,45 +104,44 @@ def run_main():
                         
                         if pos[1] > top: pg.moveRel(0, -45)
                         elif pos[1] < bottom: pg.moveRel(0, 45)
-            else:
-                if not settings.has_topleft:
-                    # tell the user what to do
-                    if not settings.msg_topleft:
-                        settings.msg_topleft = True
-
-                        print("Look at the top left and say \"ready\".")
-                    
-                    # wait for them to say they're ready
-                    if settings.said_ready:
-                        left, top = last_valid_pos
-                        settings.has_topleft = True
-                        settings.said_ready = False
-
-                        print("Saved Top Left at ", left, top)
-                        playsound('sounds/correct.mp3')
-                    
-                elif not settings.has_bottomright:
-                    # tell the user what to do
-                    if not settings.msg_bottomright:
-                        settings.msg_bottomright = True
-
-                        print("Look at the bottom right and say \"ready\".")
-                    
-                    # wait for them to say they're ready
-                    if settings.said_ready:
-                        right, bottom = last_valid_pos
-                        settings.has_bottomright = True
-                        settings.said_ready = False
-
-                        print("Saved Bottom Right at ", right, bottom)
-                        playsound('sounds/correct.mp3')
-
                 else:
-                    settings.is_calibrated = True
-        elif settings.mode == "nose":  #### NOSE TRACKING ####
-            pos = face_tracker.find_nose()
+                    if not settings.has_topleft:
+                        # tell the user what to do
+                        if not settings.msg_topleft:
+                            settings.msg_topleft = True
 
-            if pos:
+                            print("Look at the top left and say \"ready\".")
+                        
+                        # wait for them to say they're ready
+                        if settings.said_ready:
+                            left, top = last_valid_pos
+                            settings.has_topleft = True
+                            settings.said_ready = False
+
+                            print("Saved Top Left at ", left, top)
+                            playsound('sounds/correct.mp3')
+                        
+                    elif not settings.has_bottomright:
+                        # tell the user what to do
+                        if not settings.msg_bottomright:
+                            settings.msg_bottomright = True
+
+                            print("Look at the bottom right and say \"ready\".")
+                        
+                        # wait for them to say they're ready
+                        if settings.said_ready:
+                            right, bottom = last_valid_pos
+                            settings.has_bottomright = True
+                            settings.said_ready = False
+
+                            print("Saved Bottom Right at ", right, bottom)
+                            playsound('sounds/correct.mp3')
+
+                    else:
+                        settings.is_calibrated = True
+            elif settings.mode == "nose":  #### NOSE TRACKING ####
+                pos = face_tracker.find_nose()
+                
                 nose_x, nose_y = pos
 
                 if not settings.is_calibrated:
@@ -187,7 +186,10 @@ def run_main():
                             playsound('sounds/correct.mp3')
                     else:
                         settings.is_calibrated = True
-                else:
+                else: # it's calibrated
+                    nose_offset_x = nose_center_x - nose_x
+                    nose_offset_y = nose_center_y - nose_y
+
                     # scale the nose position to the screen
                     relative_pos = transform_pos(
                         pos,

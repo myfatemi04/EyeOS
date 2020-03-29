@@ -182,6 +182,10 @@ class FaceTracker(object):
             p = self.landmarks.part(nose_index)
             return p.x, p.y
 
+    ## function to tell if the face is defined
+    def found_face(self):
+        return bool(self.landmarks)
+
     ## draw on the frame
     def annotated_frame(self):
         frame = self.frame.copy()
