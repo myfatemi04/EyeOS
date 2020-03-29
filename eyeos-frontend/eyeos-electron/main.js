@@ -1,6 +1,13 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
+const EyeOS = require('./wrapper')
+ 
+require('electron-reload')(__dirname, {
+  electron: path.join(__dirname, '../', 'node_modules', '.bin', 'electron'),
+  hardResetMethod: 'exit'
+});
+
 const isDev = require("electron-is-dev")
 
 let mainWindow
@@ -12,6 +19,10 @@ function createWindow () {
     height: 700,
     minWidth: 1000,
     minHeight: 700,
+    webPreferences: {
+      nodeIntegration: true,
+      preload: path.join(__dirname, 'preload.js')
+    }
   })
 
   // and load the index.html of the app.
@@ -39,5 +50,20 @@ app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+var eyeOS = new EyeOS(ipcMain)
+
+ipcMain.on('start-eyeOS', (event, arg) => {
+  console.log("staring eyeOS");
+  if(!eyeOS.isOn)
+    eyeOS.start(event)
+})
+
+ipcMain.on('stop-eyeOS', (event, arg) => {
+  console.log('stopping eyeOS')
+  if(eyeOS.isOn)
+    eyeOS.kill(event)
+})
+
+ipcMain.on('start-tts-setup', (event, arg) => {
+
+})
