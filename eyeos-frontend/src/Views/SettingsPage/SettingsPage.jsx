@@ -63,9 +63,9 @@ class SettingsPage extends React.Component {
     if(log.includes("Booting EyeOS")) {
       this.props.alert("Starting", "Enabling EyeOS")
     } else if(log.includes("Look at the top left")) {
-      this.props.alert("Calibrating", "Look at the top left of your screen and blink");
+      this.props.alert("Calibrating", "Look at the top left of your screen and say \"ready\"");
     } else if(log.includes("Look at the bottom right")) {
-      this.props.alert("Calibrating", "Look at the bottom right of your screen and blink");
+      this.props.alert("Calibrating", "Look at the bottom right of your screen and say \"ready\"");
     } else if(log.includes("Saved Top Left")) {
       let newState = Object.assign({}, this.state);
       newState.leftCalibrated = true;

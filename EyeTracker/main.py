@@ -227,9 +227,11 @@ def stop_tracker():
     settings.main_thread.join()
     
 def start_speech_to_text():
-    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True, args = (sys.argv[1],))
+    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True, args = (sys.argv[2],))
     speech_thread.start()
 
 if __name__ == "__main__":
-    start_tracker("eye")
-    start_speech_to_text()
+    if sys.argv[1] == "eye":
+        start_tracker("eye")
+    elif sys.argv[1] == "sst":
+        start_speech_to_text()
