@@ -20,6 +20,45 @@ def pxy(p):
 def point_dist(a, b):
     return((a.x-b.x)**2+(a.y-b.y)**2)**0.5
 
+class NoseTracker:
+    def __init__(self):
+        self._face_detector = dlib.get_frontal_face_detector()
+        cwd = os.path.abspath(os.path.dirname(__file__))
+        model_path = os.path.abspath(os.path.join(cwd, "trained_models/shape_predictor_68_face_landmarks.dat"))
+        self._predictor = dlib.shape_predictor(model_path)
+        self.frame = None
+        self.landmarks = None
+    
+    def refresh(self, frame):
+        self.frame = frame
+        self._analyze()
+
+    def _analyze(self):
+        frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
+        faces = self._face_detector(frame)
+
+        if len(faces) > 0:
+            self.landmarks = self._predictor(frame, faces[0])
+        else:
+            return
+
+    def find_nose(self):
+        nose_index = 34
+        if self.landmarks:
+            return self.landmarks.part(nose_index)
+
+    def get_points(self, indexes):
+        a = []
+        for index in indexes:
+            p = self.landmarks.part(index)
+            a.append((p.x, p.y))
+
+    def annotated_frame(self):
+        frame = self.frame.copy()
+        if self.landmarks:
+            cv2.polylines(frame, self.get_points([32, 33, 34, 35, 36]), True, (0, 255, 0))
+        return frame
+
 class EyeTracker(object):
     def __init__(self):
         self.landmarks = None

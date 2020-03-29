@@ -2,3 +2,4 @@ pyautogui
 oauth2client
 google-cloud-speech
 google-api-python-client
+playsound

@@ -1,1 +1,1 @@
-from .eye_tracking import EyeTracker
+from .eye_tracking import EyeTracker, NoseTracker
