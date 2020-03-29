@@ -250,7 +250,7 @@ if __name__ == "__main__":
             start_tracker("eye")
         elif sys.argv[1] == "nose":
             start_tracker("nose")
-        elif sys.argv[1] == "stt"
+        elif sys.argv[1] == "stt":
             start_speech_to_text()
     else:
         print("Please specify a tracker mode")
