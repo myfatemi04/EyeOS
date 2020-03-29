@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 
 
 class NavbarItem extends React.Component {
-  defaultProps = {
-    className: "",
+  static defaultProps = {
     color: "black",
     textColor: "black",
   }
