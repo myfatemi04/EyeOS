@@ -7,6 +7,7 @@ def speech_to_text():
     import speech_recognition as sr
     import webbrowser
     import os
+    import start_menu
     
     last_scrollup = 400
     last_scrolldown = 400
@@ -56,14 +57,14 @@ def speech_to_text():
                     g.scroll(last_scrollup)
                     if last_scrollup < 3200:
                         last_scrollup *= 2
-                elif text.lower() == "discord":
-                    os.system("Discord.exe")
-                elif text.lower() == "minecraft":
-                    os.system("Minecraft.exe")
-                elif text.lower() == "pie charm":
-                    os.system("Pycharm.exe")
-                # elif text.lower().startswith("query"):
-                #     print(' '.join(query.webQuery(text.lower.split()[1:])))
+                elif text.startswith("open "):
+                    o, search = text.split(" ", maxsplit=1)
+                    found = start_menu.find_links(search)
+                    if not found:
+                        print("No files found!")
+                    else:
+                        best_file, _ = found[0]
+                        os.system(best_file)
 
                 if text.lower() != 'scroll up':
                     last_scrollup = 400

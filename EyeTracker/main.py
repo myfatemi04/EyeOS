@@ -73,7 +73,7 @@ if __name__ == "__main__":
         _, frame = cap.read()
         tracker.refresh(frame)
         frame = tracker.annotated_frame()
-        # cv2.imshow("Tracker", frame)
+        cv2.imshow("Tracker", frame)
 
         is_blinking = tracker.is_blinking()
         left_blink = tracker.left_blinking()
