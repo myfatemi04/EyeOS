@@ -1,4 +1,4 @@
-import globals
+import settings
 import subprocess
 import platform
 import numpy as np
@@ -60,19 +60,16 @@ custom_keys = {
     "enter": "\n"
 }
 
-def audio_volume(audio_array):
-    return 20*np.log10(
-        np.sqrt(np.mean(audio_array**2))
-    )
-
 def speech_to_text():
     r = sr.Recognizer()
     m = sr.Microphone()
     with m as source:
         r.adjust_for_ambient_noise(source)
-    r.listen_in_background(m, callback)
+        while True:
+            audio = r.listen(source)
+            process_audio(r, audio)
 
-def callback(r, audio):
+def process_audio(r, audio):
     import main
     import pyautogui as g
     import webbrowser
@@ -96,22 +93,13 @@ def callback(r, audio):
         g.typewrite(rest)
     elif "calibrate" in lower:
         print("Recalibrating...")
-        globals.should_calibrate = True
-        globals.has_bottomright = False
-        globals.has_topleft = False
-        globals.msg_bottomright = False
-        globals.msg_topleft = False
-        globals.has_nose_center = False
-        globals.has_nose_move = False
-        globals.msg_center = False
-        globals.msg_movenose = False
     elif lower in ["exit", "stop", "quit"]:
         print("You indicated that you wanted to stop...")
-        globals.should_stop = True
+        settings.tracker_active = False
     elif lower.startswith("website "):
         webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
-    elif lower in ['done', 'complete', 'completed', 'dime']:
-        globals.said_done = True
+    elif lower == "ready":
+        settings.said_ready = True
     elif lower == "click": 
         g.leftClick()
     elif lower == "right click":
@@ -172,15 +160,15 @@ def callback(r, audio):
     elif "backspace" in lower:
         g.press("backspace")
     elif 'center' in lower or 'censor' in lower:
-        globals.said_centered = True
+        settings.said_centered = True
     elif lower.replace(" ", "") == 'fullscreen':
         g.press('f11')
     elif lower == 'eye mode' or lower == 'i mode':
-        globals.mode = 'eye'
-        globals.should_calibrate = True
+        settings.mode = 'eye'
+        settings.recalibrate()
     elif lower in ['nose mode', 'snooze mode']:
-        globals.mode = 'nose'
-        globals.should_calibrate = True
+        settings.mode = 'nose'
+        settings.recalibrate()
     elif "control" in lower or "shift" in lower or "ctrl" in lower or "alt" in lower:
         keys = text.split()
         keys = ["ctrl" if key=="control" else key for key in keys]
