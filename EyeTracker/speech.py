@@ -71,16 +71,16 @@ def press_key(key, cmd=g.press):
     else:
         print("Key not found: ", key)
 
-def speech_to_text(launcher=1):
+def speech_to_text(typing_on, launcher_on):
     r = sr.Recognizer()
     m = sr.Microphone()
     with m as source:
         r.adjust_for_ambient_noise(source)
         while True:
             audio = r.listen(source)
-            process_audio(r, audio, launcher)
+            process_audio(r, audio, typing_on, launcher_on)
 
-def process_audio(r, audio, launcher):
+def process_audio(r, audio, typing_on, launcher_on):
     import main
     import webbrowser
     import os
@@ -96,47 +96,48 @@ def process_audio(r, audio, launcher):
     print(f'Microphone received: "{text}"')
     lower = text.lower()
 
-    if lower.startswith("type "):
-        _, rest = text.split(" ", maxsplit=1)
-        g.typewrite(rest)
-        typewrite_lengths.append(len(rest))
-    
-    # keyboard shortcuts
-    if lower == 'undo':
-        g.hotkey('ctrl', 'z')
-    elif lower == 'copy':
-        g.hotkey('ctrl', 'c')
-    elif lower == 'paste' or lower == 'pace':
-        g.hotkey('ctrl', 'v')
-    elif lower == 'cut':
-        g.hotkey('ctrl', 'x')
-    elif lower == 'undo typing':
-        if typewrite_lengths:
-            g.press("backspace", typewrite_lengths[-1])
-            typewrite_lengths = typewrite_lengths[:-1]
-    elif lower.replace(" ", "") == 'fullscreen':
-        g.press('f11')
+    if typing_on:
+        if lower.startswith("type "):
+            _, rest = text.split(" ", maxsplit=1)
+            g.typewrite(rest)
+            typewrite_lengths.append(len(rest))
+        
+        # keyboard shortcuts
+        if lower == 'undo':
+            g.hotkey('ctrl', 'z')
+        elif lower == 'copy':
+            g.hotkey('ctrl', 'c')
+        elif lower == 'paste' or lower == 'pace':
+            g.hotkey('ctrl', 'v')
+        elif lower == 'cut':
+            g.hotkey('ctrl', 'x')
+        elif lower == 'undo typing':
+            if typewrite_lengths:
+                g.press("backspace", typewrite_lengths[-1])
+                typewrite_lengths = typewrite_lengths[:-1]
+        elif lower.replace(" ", "") == 'fullscreen':
+            g.press('f11')
 
-    # key controls
-    if lower.startswith("press "):
-        key = lower[6:]
-        press_key(key)
-    elif lower.startswith("hold "):
-        key = lower[5:]
-        press_key(key, cmd=g.keyDown)
-    elif lower.startswith("release "):
-        key = lower[8:]
-        press_key(key, cmd=g.keyUp)
+        # key controls
+        if lower.startswith("press "):
+            key = lower[6:]
+            press_key(key)
+        elif lower.startswith("hold "):
+            key = lower[5:]
+            press_key(key, cmd=g.keyDown)
+        elif lower.startswith("release "):
+            key = lower[8:]
+            press_key(key, cmd=g.keyUp)
 
-    # hotkey shortcuts
-    elif "control" in lower or "shift" in lower or "ctrl" in lower or "alt" in lower or "windows" in lower:
-        keys = lower.split()
-        keys = ["ctrl" if key=="control" else key for key in keys]
-        g.hotkey(*keys)
-    elif lower.replace(" ", "") in custom_keys:
-        g.press(custom_keys[lower.replace(" ", "")])
-    elif lower.replace(" ", "") in g.KEY_NAMES:
-        g.press(lower.replace(" ", ""))
+        # hotkey shortcuts
+        elif "control" in lower or "shift" in lower or "ctrl" in lower or "alt" in lower or "windows" in lower:
+            keys = lower.split()
+            keys = ["ctrl" if key=="control" else key for key in keys]
+            g.hotkey(*keys)
+        elif lower.replace(" ", "") in custom_keys:
+            g.press(custom_keys[lower.replace(" ", "")])
+        elif lower.replace(" ", "") in g.KEY_NAMES:
+            g.press(lower.replace(" ", ""))
     
     # recalibrate the tracker
     if "calibrate" in lower:
@@ -183,12 +184,17 @@ def process_audio(r, audio, launcher):
     elif lower == "mouse" or lower == "cursor":
         settings.movement_mode = "cursor"
     
+    if lower == "typing on":
+        typing_on = True
+    elif lower == "typing off":
+        typing_on = False
+
     # application controls
     # open a website
     if lower.startswith("website "):
         webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
     # run a program
-    elif launcher == 1 and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
+    elif launcher_on and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
         _, search = lower.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if not found:
@@ -204,4 +210,4 @@ def process_audio(r, audio, launcher):
         webbrowser.open('http://www.google.com/search?q=' + query)
 
 if __name__ == "__main__":
-    speech_to_text(1)
+    speech_to_text(typing_on=True, launcher_on=True)

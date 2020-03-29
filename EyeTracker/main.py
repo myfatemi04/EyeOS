@@ -240,17 +240,17 @@ def stop_tracker():
     settings.tracker_active = False
     settings.main_thread.join()
     
-def start_speech_to_text():
-    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=False, args = (sys.argv[2],))
+def start_speech_to_text(typing_on=True, launcher_on=True):
+    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=False, args = (typing_on, launcher_on))
     speech_thread.start()
 
 if __name__ == "__main__":
+    typing_on = launcher_on = True
+
     if len(sys.argv) > 1:
-        if sys.argv[1] == "eye":
-            start_tracker("eye")
-        elif sys.argv[1] == "nose":
-            start_tracker("nose")
-        elif sys.argv[1] == "stt":
-            start_speech_to_text()
-    else:
-        print("Please specify a tracker mode")
+        typing_on = sys.argv[1] != "notyping"
+    if len(sys.argv) > 2:
+        launcher_on = sys.argv[2] != "launcher"
+    
+    start_speech_to_text(typing_on=typing_on, launcher_on=launcher_on)
+    
