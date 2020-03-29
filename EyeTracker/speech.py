@@ -84,13 +84,17 @@ def press_key(key, cmd=g.press):
 def speech_to_text(typing_on, launcher_on):
     r = sr.Recognizer()
     m = sr.Microphone()
+    sst_settings = {
+        "typing_on": typing_on,
+        "launcher_on": launcher_on
+    }
     with m as source:
         r.adjust_for_ambient_noise(source)
         while True:
             audio = r.listen(source)
-            process_audio(r, audio, typing_on, launcher_on)
+            process_audio(r, audio, sst_settings)
 
-def process_audio(r, audio, typing_on, launcher_on):
+def process_audio(r, audio, sst_settings):
     import main
     import webbrowser
     import os
@@ -106,7 +110,7 @@ def process_audio(r, audio, typing_on, launcher_on):
     print(f'Microphone received: "{text}"')
     lower = text.lower()
 
-    if typing_on:
+    if sst_settings['typing_on']:
         if lower.startswith("type "):
             _, rest = text.split(" ", maxsplit=1)
             g.typewrite(rest)
@@ -154,6 +158,7 @@ def process_audio(r, audio, typing_on, launcher_on):
         if settings.tracker_active:
             print("Recalibrating...")
             settings.recalibrate()
+
     # exit the tracker
     elif lower in ["exit", "stop", "quit"]:
         if settings.tracker_active:
@@ -195,9 +200,14 @@ def process_audio(r, audio, typing_on, launcher_on):
         settings.movement_mode = "cursor"
     
     if lower == "typing on":
-        typing_on = True
+        sst_settings['typing_on'] = True
     elif lower == "typing off":
-        typing_on = False
+        sst_settings['typing_on'] = False
+
+    if lower == "launcher on":
+        sst_settings['launcher_on'] = True
+    elif lower == "launcher off":
+        sst_settings['launcher_on'] = False
 
     # application controls
     # open a website
@@ -205,7 +215,7 @@ def process_audio(r, audio, typing_on, launcher_on):
         webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
     
     # run a program
-    elif launcher_on and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
+    elif sst_settings['launcher_on'] and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
         _, search = lower.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if found:
