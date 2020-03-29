@@ -5,15 +5,20 @@ def speech_to_text():
     import pyautogui as g
     import speech_recognition as sr
     import webbrowser
+    import os
     
+    last_scrollup = 400
+    last_scrolldown = 400
+
     r = sr.Recognizer()
     with sr.Microphone() as source:
         while True:
             audio = r.listen(source)
+            # print(dir(audio))
             try:
                 text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
-            except sr.UnknownValueError:
-                print("No text input was supplied")
+            except sr.UnknownValueError as e:
+                print(e)
             else:
                 print(f'"{text}"')
                 if text == "spacebar":
@@ -33,7 +38,32 @@ def speech_to_text():
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
                     webbrowser.open('http://' + text.lower().split()[1])
-                elif text.lower() == 'done':
+                elif text.lower() in ['done', 'complete']:
                     globals.said_done = True
-                else:
-                    g.typewrite(text)
+                elif text.lower() == "click": 
+                    g.click()
+                elif text.lower() == "right click":
+                    g.rightClick()
+                elif text.lower() == "left click":
+                    g.leftClick()
+                elif text.lower() == "double click":
+                    g.doubleClick()
+                elif text.lower() == "scroll down":
+                    g.scroll(-last_scrolldown)
+                    if last_scrolldown < 3200:
+                        last_scrolldown *= 2
+                elif text.lower() == "scroll up":
+                    g.scroll(last_scrollup)
+                    if last_scrollup < 3200:
+                        last_scrollup *= 2
+                elif text.lower() == "discord":
+                    os.system("Discord.exe")
+                elif text.lower() == "minecraft":
+                    os.system("Minecraft.exe")
+                elif text.lower() == "pie charm":
+                    os.system("Pycharm.exe")
+
+                if text.lower() != 'scroll up':
+                    last_scrollup = 400
+                if text.lower() != 'scroll down':
+                    last_scrolldown = 400
