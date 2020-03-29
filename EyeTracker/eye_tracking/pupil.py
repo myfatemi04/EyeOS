@@ -8,6 +8,7 @@ class Pupil(object):
         self.threshold = threshold
         self.x = None
         self.y = None
+        self.blinking = False
 
         self.detect_iris(eye_frame)
 
@@ -22,9 +23,18 @@ class Pupil(object):
 
     def detect_iris(self, eye_frame):
         self.iris_frame = self.image_processing(eye_frame, self.threshold)
+        # cv2.imshow("Iris", self.iris_frame)
 
         contours, _ = cv2.findContours(self.iris_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
         contours = sorted(contours, key=cv2.contourArea)
+
+        num_black = self.iris_frame.shape[0] * self.iris_frame.shape[1] - cv2.countNonZero(self.iris_frame)
+        if num_black < 100:
+            self.blinking = True
+        else:
+            self.blinking = False
+
+        # print(num_black)
 
         try:
             moments = cv2.moments(contours[-2])
