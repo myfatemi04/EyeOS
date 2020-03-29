@@ -76,7 +76,7 @@ ipcMain.handle('stt-on', (event, arg) => {
 ipcMain.handle('start-stt', (event, arg) => {
   console.log("starting stt");
   if(!stt.isOn)
-    stt.start(arg, event)
+    stt.start(event)
 })
 
 ipcMain.handle('stop-stt', (event, arg) => {
