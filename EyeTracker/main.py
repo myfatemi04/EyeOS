@@ -49,8 +49,6 @@ def run_main():
 
     # keep track of frame number
     i = 0
-
-    print("Booting EyeOS")
     
     # require a mode to be set
     if not settings.mode:
@@ -75,43 +73,44 @@ def run_main():
                 if i % 100 == 0:
                     face_tracker.calibration.recalibrate()
 
-                # find the offset of the pupils
-                pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
-                
-                if settings.is_calibrated:
-                    last_valid_pos = pos
-                    if settings.movement_mode == "cursor":
-                        if settings.eye_pos_mode == "absolute":
-                            ## absolute positioning
-                            ## estimates where you're looking on screen
-                            tpos = transform_pos(
-                                pos,
-                                left,
-                                right,
-                                top,
-                                bottom,
-                                screen_left,
-                                screen_right,
-                                screen_bottom,
-                                screen_top
-                            )
+                if face_tracker.found_eyes():
+                    # find the offset of the pupils
+                    pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
+                    
+                    if settings.is_calibrated:
+                        last_valid_pos = pos
+                        if settings.movement_mode == "cursor":
+                            if settings.eye_pos_mode == "absolute":
+                                ## absolute positioning
+                                ## estimates where you're looking on screen
+                                tpos = transform_pos(
+                                    pos,
+                                    left,
+                                    right,
+                                    top,
+                                    bottom,
+                                    screen_left,
+                                    screen_right,
+                                    screen_bottom,
+                                    screen_top
+                                )
 
-                            int_pos = int(tpos[0]), int(tpos[1])
-                            pg.moveTo(int_pos[0], int_pos[1])
-                        elif settings.eye_pos_mode == "relative":
-                            ## relative positioning
-                            ## moves in 45-px increments
-                            if pos[0] < left//2: pg.moveRel(-45, 0)
-                            elif pos[0] > right//2: pg.moveRel(45, 0)
+                                int_pos = int(tpos[0]), int(tpos[1])
+                                pg.moveTo(int_pos[0], int_pos[1])
+                            elif settings.eye_pos_mode == "relative":
+                                ## relative positioning
+                                ## moves in 45-px increments
+                                if pos[0] < left//2: pg.moveRel(-45, 0)
+                                elif pos[0] > right//2: pg.moveRel(45, 0)
+                                
+                                if pos[1] > top: pg.moveRel(0, -45)
+                                elif pos[1] < bottom: pg.moveRel(0, 45)
+                        elif settings.eye_pos_mode == "scroll":
+                            if pos[0] < left//2: pg.hscroll(-45)
+                            elif pos[0] > right//2: pg.hscroll(45)
                             
-                            if pos[1] > top: pg.moveRel(0, -45)
-                            elif pos[1] < bottom: pg.moveRel(0, 45)
-                    elif settings.eye_pos_mode == "scroll":
-                        if pos[0] < left//2: pg.hscroll(-45)
-                        elif pos[0] > right//2: pg.hscroll(45)
-                        
-                        if pos[1] > top: pg.vscroll(-45)
-                        elif pos[1] < bottom: pg.vscroll(45)
+                            if pos[1] > top: pg.vscroll(-45)
+                            elif pos[1] < bottom: pg.vscroll(45)
                 else:
                     if not settings.has_topleft:
                         # tell the user what to do
@@ -247,10 +246,15 @@ def start_speech_to_text(typing_on=True, launcher_on=True):
 if __name__ == "__main__":
     typing_on = launcher_on = True
 
+    print("Booting EyeOS")
+
     if len(sys.argv) > 1:
         typing_on = sys.argv[1] != "notyping"
+        print("Typing turned off")
     if len(sys.argv) > 2:
         launcher_on = sys.argv[2] != "launcher"
+        print("Launcher turned off")
+
+    print("Start by saying \"eye mode\" or \"nose mode\", or simply by using the speech-to-text keyboard!")
     
     start_speech_to_text(typing_on=typing_on, launcher_on=launcher_on)
-    

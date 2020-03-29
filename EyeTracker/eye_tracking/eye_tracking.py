@@ -185,6 +185,10 @@ class FaceTracker(object):
     ## function to tell if the face is defined
     def found_face(self):
         return bool(self.landmarks)
+    
+    ## function to tell if the eyes have been found
+    def found_eyes(self):
+        return self.found_face() and self.eye_left and self.eye_right and self.pupils_located
 
     ## draw on the frame
     def annotated_frame(self):
