@@ -12,13 +12,13 @@ has_nose_center = False
 msg_nose_move = False
 has_nose_move = False
 
-mode = "eye"
+mode = "nose"
 eye_pos_mode = "absolute"
 eye_trace_mode = "eyelid"
 
+movement_mode = "cursor"
+
 said_ready = False
-said_centered = False
-said_moved = False
 
 tracker_active = False
 

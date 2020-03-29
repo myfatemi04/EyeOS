@@ -79,31 +79,38 @@ def run_main():
                 
                 if settings.is_calibrated:
                     last_valid_pos = pos
-                    if settings.eye_pos_mode == "absolute":
-                        ## absolute positioning
-                        ## estimates where you're looking on screen
-                        tpos = transform_pos(
-                            pos,
-                            left,
-                            right,
-                            top,
-                            bottom,
-                            screen_left,
-                            screen_right,
-                            screen_bottom,
-                            screen_top
-                        )
+                    if settings.movement_mode == "cursor":
+                        if settings.eye_pos_mode == "absolute":
+                            ## absolute positioning
+                            ## estimates where you're looking on screen
+                            tpos = transform_pos(
+                                pos,
+                                left,
+                                right,
+                                top,
+                                bottom,
+                                screen_left,
+                                screen_right,
+                                screen_bottom,
+                                screen_top
+                            )
 
-                        int_pos = int(tpos[0]), int(tpos[1])
-                        pg.moveTo(int_pos[0], int_pos[1])
-                    elif settings.eye_pos_mode == "relative":
-                        ## relative positioning
-                        ## moves in 45-px increments
-                        if pos[0] < left//2: pg.moveRel(-45, 0)
-                        elif pos[0] > right//2: pg.moveRel(45, 0)
+                            int_pos = int(tpos[0]), int(tpos[1])
+                            pg.moveTo(int_pos[0], int_pos[1])
+                        elif settings.eye_pos_mode == "relative":
+                            ## relative positioning
+                            ## moves in 45-px increments
+                            if pos[0] < left//2: pg.moveRel(-45, 0)
+                            elif pos[0] > right//2: pg.moveRel(45, 0)
+                            
+                            if pos[1] > top: pg.moveRel(0, -45)
+                            elif pos[1] < bottom: pg.moveRel(0, 45)
+                    elif settings.eye_pos_mode == "scroll":
+                        if pos[0] < left//2: pg.hscroll(-45)
+                        elif pos[0] > right//2: pg.hscroll(45)
                         
-                        if pos[1] > top: pg.moveRel(0, -45)
-                        elif pos[1] < bottom: pg.moveRel(0, 45)
+                        if pos[1] > top: pg.vscroll(-45)
+                        elif pos[1] < bottom: pg.vscroll(45)
                 else:
                     if not settings.has_topleft:
                         # tell the user what to do
@@ -141,7 +148,7 @@ def run_main():
                         settings.is_calibrated = True
             elif settings.mode == "nose":  #### NOSE TRACKING ####
                 pos = face_tracker.find_nose()
-                
+
                 nose_x, nose_y = pos
 
                 if not settings.is_calibrated:
@@ -173,7 +180,7 @@ def run_main():
                                     nose_dist = ((nose_x - nose_center_x) ** 2 + (nose_y - nose_center_y) ** 2) ** 0.5
                                 if nose_dist > 20:
                                     nose_x_dists.append(nose_center_x - pos[0])
-                                    nose_y_dists.append(pos[1] - nose_center_y)
+                                    nose_y_dists.append(nose_center_y - pos[1])
                         else:
                             max_x_dist = max(nose_x_dists)
                             nose_x_move = max_x_dist * 1.5
@@ -187,23 +194,30 @@ def run_main():
                     else:
                         settings.is_calibrated = True
                 else: # it's calibrated
-                    nose_offset_x = nose_center_x - nose_x
-                    nose_offset_y = nose_center_y - nose_y
+                    nose_offset_x = nose_x - nose_center_x
+                    nose_offset_y = nose_y - nose_center_y
 
-                    # scale the nose position to the screen
-                    relative_pos = transform_pos(
-                        pos,
-                        nose_center_x + nose_x_move,
-                        nose_center_x - nose_x_move,
-                        nose_center_y - nose_y_move,
-                        nose_center_y + nose_y_move,
-                        screen_left,
-                        screen_right,
-                        screen_bottom,
-                        screen_top
-                    )
+                    if settings.movement_mode == 'cursor':
+                        # scale the nose position to the screen
+                        relative_pos = transform_pos(
+                            (nose_offset_x, nose_offset_y),
+                            nose_x_move,
+                            -nose_x_move,
+                            -nose_y_move,
+                            nose_y_move,
+                            screen_left,
+                            screen_right,
+                            screen_bottom,
+                            screen_top
+                        )
 
-                    pg.moveTo(*relative_pos)
+                        pg.moveTo(*relative_pos)
+                    elif settings.movement_mode == 'scroll':
+                        # scroll in the requested direction
+                        if abs(nose_offset_x) > 20:
+                            pg.hscroll(nose_offset_x)
+                        if abs(nose_offset_y) > 20:
+                            pg.vscroll(-nose_offset_y)
 
         # option to exit by pressing Q
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -230,5 +244,5 @@ def start_speech_to_text():
     speech_thread.start()
 
 if __name__ == "__main__":
-    start_tracker("eye")
+    start_tracker("nose")
     start_speech_to_text()
