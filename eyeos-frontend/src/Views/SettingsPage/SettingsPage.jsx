@@ -14,31 +14,49 @@ class SettingsPage extends React.Component {
 
   componentDidMount() {
     this.ipc = window.ipcRenderer;
+    this.ipc.invoke("eyeOS-on", true)
+      .then((res) => {
+        let newState = Object.assign({}, this.state);
+        newState.eyeTrackingOn = res;
+        this.setState(newState)
+      });
+  }
+
+  componentWillUnmount() {
+    this.disableListeners();
+  }
+
+  enableListeners() {
+    this.ipc.on("eyeOS-startup-log", (event, arg) => {
+      if(arg.err) {
+        this.props.disableAlert();
+        // TODO: More dialog?
+      } else this.processLog(arg.msg);
+    })
+    this.ipc.on("eyeOS-kill", (event, arg) => {
+      console.log("Turned off eyeOS")
+      
+    })
+    if(!this.state.eyeTrackingOn) {
+      this.ipc.invoke('start-eyeOS');
+      this.props.alert("Starting", "Enabling EyeOS")
+    } else {
+      this.ipc.invoke('stop-eyeOS');
+      let newState = Object.assign({}, this.state);
+      newState.eyeTrackingOn = false
+      this.setState(newState)
+    }
+  }
+
+  disableListeners() {
+    this.ipc.removeAllListeners("eyeOS-startup-log");
   }
 
   toggleEyeOS() {
-    window.ipcRenderer.on("eyeOS-startup-log", (event, arg) => {
-      if(arg.err) console.log(arg.err);
-      else this.processLog(arg.msg);
-    })
-    window.ipcRenderer.on("eyeOS-kill", (event, arg) => {
-      console.log("Turned off eyeOS")
-      this.setState({
-        eyeTrackingOn: false
-      })
-    })
-    window.ipcRenderer.on("eyeOS-started", (event, arg) => {
-      console.log("eyeOS started")
-      this.setState({
-        eyeTrackingOn: true
-      })
-    })
-    if(!this.state.eyeTrackingOn) {
-      window.ipcRenderer.send('start-eyeOS', true);
-      this.props.alert("Starting", "Enabling EyeOS")
-    } else {
-      window.ipcRenderer.send('stop-eyeOS', true)
-    }
+    let newState = Object.assign({}, this.state);
+    this.enableListeners();
+    newState.eyeTrackingOn = !newState.eyeTrackingOn;
+    this.setState(newState)
   }
 
   processLog(log) {

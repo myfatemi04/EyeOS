@@ -25,21 +25,19 @@ class EyeOS {
   
     pyshell.end((err) => {
       if(err) { 
-        event.reply('eyeOS-startup-log', {
+        event.sender.send('eyeOS-startup-log', {
           err: "An error occured"
         });
-        this.python_process.kill('SIGINT');
         console.log(err);
       }
       console.log("finished");
     })
   }
 
-  kill(event) {
+  kill() {
     if(this.python_process) {
       this.python_process.kill('SIGINT');
       this.python_process = null;
-      event.sender.send('eyeOS-kill', true);
     }
   }
 

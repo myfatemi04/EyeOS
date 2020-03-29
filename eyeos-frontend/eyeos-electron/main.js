@@ -52,13 +52,17 @@ app.on('activate', function () {
 
 var eyeOS = new EyeOS(ipcMain)
 
-ipcMain.on('start-eyeOS', (event, arg) => {
+ipcMain.handle('eyeOS-on', (event, arg) => {
+  return eyeOS.isOn;
+})
+
+ipcMain.handle('start-eyeOS', (event, arg) => {
   console.log("staring eyeOS");
   if(!eyeOS.isOn)
     eyeOS.start(event)
 })
 
-ipcMain.on('stop-eyeOS', (event, arg) => {
+ipcMain.handle('stop-eyeOS', (event, arg) => {
   console.log('stopping eyeOS')
   if(eyeOS.isOn)
     eyeOS.kill(event)

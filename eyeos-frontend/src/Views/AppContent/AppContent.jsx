@@ -37,7 +37,7 @@ class AppContent extends React.Component {
     let alert;
     if(this.state.alertEnabled) {
       alert = (
-        <div className="alert-overlay w-full h-full fixed z-40">
+        <div className="alert-overlay w-full h-full pointer-events-none fixed z-40">
           <div className="flex items-center w-full h-full">
             <div className="alert-box bg-secondary m-auto rounded-lg p-6">
               <div className="text-2xl font-medium text-center">{this.state.alertTitle}</div>
