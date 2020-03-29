@@ -7,28 +7,47 @@ class SettingsPage extends React.Component {
     super(props)
     this.state = {
       eyeTrackingOn: false,
+      sttOn: false,
       leftCalibrated: false,
       rightCalibrated: false, 
-      error: false,
+      errorEye: false,
+      errorSTT: false,
     }
     this.toggleEyeOS = this.toggleEyeOS.bind(this);
-    this.processLog = this.processLog.bind(this);
+    this.toggleSTT = this.toggleSTT.bind(this);
+    this.processEyeOSLog = this.processEyeOSLog.bind(this);
+    this.processSTTLog = this.processEyeOSLog.bind(this);
   }
 
   componentDidMount() {
     this.ipc = window.ipcRenderer;
     this.ipc.on("eyeOS-startup-log", (event, arg) => {
-      if(arg.err) {
+      if(arg.err && this.state.eyeTrackingOn) {
         this.props.disableAlert();
         let newState = Object.assign({}, this.state);
-        newState.error = true;
+        newState.errorEye = true;
         this.setState(newState)
-      } else this.processLog(arg.msg);
+      } else this.processEyeOSLog(arg.msg);
     })
     this.ipc.invoke("eyeOS-on", true)
       .then((res) => {
         let newState = Object.assign({}, this.state);
         newState.eyeTrackingOn = res;
+        this.setState(newState)
+      });
+
+    this.ipc.on("stt-startup-log", (event, arg) => {
+      if(arg.err && this.state.sttOn) {
+        this.props.disableAlert();
+        let newState = Object.assign({}, this.state);
+        newState.errorSTT = true;
+        this.setState(newState)
+      } else this.processSTTLog(arg.msg);
+    })
+    this.ipc.invoke("stt-on", true)
+      .then((res) => {
+        let newState = Object.assign({}, this.state);
+        newState.sttOn = res;
         this.setState(newState)
       });
   }
@@ -43,12 +62,12 @@ class SettingsPage extends React.Component {
 
   toggleEyeOS() {
     let newState = Object.assign({}, this.state);
-    newState.error = false;
+    newState.errorEye = false;
     this.setState(newState);
     if(!this.state.eyeTrackingOn) {
       this.ipc.invoke('start-eyeOS');
-      this.props.alert("Starting", "Enabling EyeOS")
     } else {
+      this.props.disableAlert()
       this.ipc.invoke('stop-eyeOS');
       let newState = Object.assign({}, this.state);
       newState.eyeTrackingOn = false
@@ -59,23 +78,47 @@ class SettingsPage extends React.Component {
     this.setState(newState)
   }
 
-  processLog(log) {
-    if(log.includes("Booting EyeOS")) {
-      this.props.alert("Starting", "Enabling EyeOS")
-    } else if(log.includes("Look at the top left")) {
-      this.props.alert("Calibrating", "Look at the top left of your screen and say \"ready\"");
-    } else if(log.includes("Look at the bottom right")) {
-      this.props.alert("Calibrating", "Look at the bottom right of your screen and say \"ready\"");
-    } else if(log.includes("Saved Top Left")) {
+  toggleSTT() {
+    let newState = Object.assign({}, this.state);
+    newState.errorSTT = false;
+    this.setState(newState);
+    if(!this.state.sttOn) {
+      this.ipc.invoke('start-stt', false);
+    } else {
+      this.props.disableAlert()
+      this.ipc.invoke('stop-stt');
       let newState = Object.assign({}, this.state);
-      newState.leftCalibrated = true;
-      this.setState(newState);
-    } else if(log.includes("Saved Bottom Right")) {
-      let newState = Object.assign({}, this.state);
-      newState.leftCalibrated = true;
-      this.setState(newState);
-      this.props.disableAlert();
+      newState.sttOn = false
+      this.setState(newState)
     }
+    
+    newState.sttOn = !newState.sttOn;
+    this.setState(newState)
+  }
+
+  processEyeOSLog(log) {
+    if(this.state.eyeTrackingOn) {
+      if(log.includes("Booting EyeOS")) {
+        this.props.alert("Starting", "Enabling EyeOS")
+      } else if(log.includes("Look at the top left")) {
+        this.props.alert("Calibrating", "Look at the top left of your screen and say \"ready\"");
+      } else if(log.includes("Look at the bottom right")) {
+        this.props.alert("Calibrating", "Look at the bottom right of your screen and say \"ready\"");
+      } else if(log.includes("Saved Top Left")) {
+        let newState = Object.assign({}, this.state);
+        newState.leftCalibrated = true;
+        this.setState(newState);
+      } else if(log.includes("Saved Bottom Right")) {
+        let newState = Object.assign({}, this.state);
+        newState.leftCalibrated = true;
+        this.setState(newState);
+        this.props.disableAlert();
+      }
+    }
+  }
+
+  processSTTLog(log) {
+
   }
 
   render() {
@@ -93,15 +136,20 @@ class SettingsPage extends React.Component {
             onClick={this.toggleEyeOS} 
             className={(!this.state.eyeTrackingOn ? "bg-green-500 hover:bg-green-700" : "bg-red-500") +  " text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-"}
           >
-            {this.state.error ? "ERROR" : this.state.eyeTrackingOn ? "Disable" : "Enable"}
+            {this.state.errorEye ? "ERROR" : this.state.eyeTrackingOn ? "Disable" : "Enable"}
           </button>
         </div>
         <div className="mt-4 p-4 rounded-md bg-secondary block max-w-xl">
-          <div className="text-xl font-bold">Text To Speech</div>
+          <div className="text-xl font-bold">Speech To Text</div>
           <div className="mb-2">
-            Use Text to Speech as keyboard input source! Speak to type words into your computer hands free!
+            Use speech-to-text as a keyboard input source! Speak to type words into your computer hands free!
           </div>
-          <button className="bg-green-500 hover:bg-green-700 text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-none">Enable</button>
+          <button 
+            onClick={this.toggleSTT}  
+            className={(!this.state.sttOn ? "bg-green-500 hover:bg-green-700" : "bg-red-500") +  " text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-"}
+          >
+            {this.state.errorSTT ? "ERROR" : this.state.sttOn ? "Disable" : "Enable"}
+          </button>
         </div>
       </div>
     );

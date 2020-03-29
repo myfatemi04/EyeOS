@@ -1,7 +1,7 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
-const EyeOS = require('./wrapper')
+const {EyeOS, SpeechToText} = require('./wrapper')
  
 require('electron-reload')(__dirname, {
   electron: path.join(__dirname, '../', 'node_modules', '.bin', 'electron'),
@@ -50,14 +50,15 @@ app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-var eyeOS = new EyeOS(ipcMain)
+var eyeOS = new EyeOS()
+var stt = new SpeechToText()
 
 ipcMain.handle('eyeOS-on', (event, arg) => {
   return eyeOS.isOn;
 })
 
 ipcMain.handle('start-eyeOS', (event, arg) => {
-  console.log("staring eyeOS");
+  console.log("starting eyeOS");
   if(!eyeOS.isOn)
     eyeOS.start(event)
 })
@@ -68,6 +69,18 @@ ipcMain.handle('stop-eyeOS', (event, arg) => {
     eyeOS.kill(event)
 })
 
-ipcMain.on('start-tts-setup', (event, arg) => {
+ipcMain.handle('stt-on', (event, arg) => {
+  return stt.isOn;
+})
 
+ipcMain.handle('start-stt', (event, arg) => {
+  console.log("starting stt");
+  if(!stt.isOn)
+    stt.start(arg, event)
+})
+
+ipcMain.handle('stop-stt', (event, arg) => {
+  console.log('stopping stt')
+  if(stt.isOn)
+    stt.kill(event)
 })
