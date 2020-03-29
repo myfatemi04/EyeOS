@@ -1,10 +1,9 @@
 import settings
-import subprocess
 import platform
-import numpy as np
 import speech_recognition as sr
 import time
 import pyautogui as g
+from playsound import playsound
 
 custom_keys = {
     "pipe": "|",
@@ -81,20 +80,17 @@ def press_key(key, cmd=g.press):
     else:
         print("Key not found: ", key)
 
-def speech_to_text(typing_on, launcher_on):
+def speech_to_text():
     r = sr.Recognizer()
     m = sr.Microphone()
-    sst_settings = {
-        "typing_on": typing_on,
-        "launcher_on": launcher_on
-    }
+
     with m as source:
         r.adjust_for_ambient_noise(source)
-        while True:
+        while settings.sst_active:
             audio = r.listen(source)
-            process_audio(r, audio, sst_settings)
+            process_audio(r, audio)
 
-def process_audio(r, audio, sst_settings):
+def process_audio(r, audio):
     import main
     import webbrowser
     import os
@@ -104,13 +100,13 @@ def process_audio(r, audio, sst_settings):
 
     try:
         text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
-    except sr.UnknownValueError:
+    except (sr.RequestError, sr.UnknownValueError):
         return
     
     print(f'Microphone received: "{text}"')
     lower = text.lower()
 
-    if sst_settings['typing_on']:
+    if settings.typing_on:
         if lower.startswith("type "):
             _, rest = text.split(" ", maxsplit=1)
             g.typewrite(rest)
@@ -156,14 +152,25 @@ def process_audio(r, audio, sst_settings):
     # recalibrate the tracker
     if "calibrate" in lower:
         if settings.tracker_active:
+            playsound('sounds/success.mp3')
+
             print("Recalibrating...")
             settings.recalibrate()
 
     # exit the tracker
-    elif lower in ["exit", "stop", "quit"]:
+    elif lower == "exit tracker":
         if settings.tracker_active:
-            print("You indicated that you wanted to stop...")
+            print("Stopping tracker...")
             settings.tracker_active = False
+
+    elif lower == "exit":
+        if settings.tracker_active:
+            print("Stopping tracker...")
+            settings.tracker_active = False
+        if settings.sst_active:
+            print("Stopping speech to text...")
+            settings.sst_active = False
+            return
     
     # set tracker mode
     if lower in ['eye mode', 'i mode', 'start eye tracker', 'start i tracker']:
@@ -200,14 +207,14 @@ def process_audio(r, audio, sst_settings):
         settings.movement_mode = "cursor"
     
     if lower == "typing on":
-        sst_settings['typing_on'] = True
+        settings.typing_on = True
     elif lower == "typing off":
-        sst_settings['typing_on'] = False
+        settings.typing_on = False
 
     if lower == "launcher on":
-        sst_settings['launcher_on'] = True
+        settings.launcher_on = True
     elif lower == "launcher off":
-        sst_settings['launcher_on'] = False
+        settings.launcher_on = False
 
     # application controls
     # open a website
@@ -215,7 +222,7 @@ def process_audio(r, audio, sst_settings):
         webbrowser.open('http://' + lower.split(" ", maxsplit=1)[1].replace(" ", ""))
     
     # run a program
-    elif sst_settings['launcher_on'] and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
+    elif settings.launcher_on and lower.startswith("open ") or lower.startswith("run ") or lower.startswith("play "):
         _, search = lower.split(" ", maxsplit=1)
         found = start_menu.find_links(search)
         if found:
@@ -233,8 +240,6 @@ def process_audio(r, audio, sst_settings):
     elif lower.startswith("google "):
         _, query = lower.split(" ", maxsplit=1)
         webbrowser.open('http://www.google.com/search?q=' + query)
-
-    print("reached end")
 
 if __name__ == "__main__":
     speech_to_text(typing_on=True, launcher_on=True)

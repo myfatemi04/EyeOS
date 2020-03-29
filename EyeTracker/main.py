@@ -28,12 +28,16 @@ def transform_pos(pos, left, right, top, bottom, screen_left, screen_right, scre
 def run_main():
     # eye calibrations
     left = right = bottom = top = None
-    last_valid_pos = (None, None)
+    
+    # used for eye calibration averages
+    left_sum = right_sum = top_sum = bottom_sum = 0
+
+    # groups cursor positions together to make the cursor more steady
+    position_group = []
 
     # used to scale up calibrations
     screen_left, screen_top = (0, 0)
     screen_right, screen_bottom = pg.size()
-    
 
     # used for nose calibrations
     nose_center_x = nose_center_y = None
@@ -49,12 +53,6 @@ def run_main():
 
     # keep track of frame number
     i = 0
-    
-    # require a mode to be set
-    if not settings.mode:
-        print("What mode do you want? Nose mode or eye mode?")
-    while not settings.mode:
-        time.sleep(0.1)
 
     # infinite loop until "exit"
     while settings.tracker_active:
@@ -68,132 +66,104 @@ def run_main():
         frame = face_tracker.annotated_frame()
         cv2.imshow("EyeOS Tracker", frame)
 
-        if face_tracker.found_face():
-            if settings.mode == 'eye':  ### EYE TRACKING ###
-                if i % 100 == 0:
-                    face_tracker.calibration.recalibrate()
+        if settings.mode == 'eye':  ### EYE TRACKING ###
+            if i % 100 == 0:
+                face_tracker.calibration.recalibrate()
 
-                if face_tracker.found_eyes():
-                    # find the offset of the pupils
-                    pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
-                    
-                    if settings.is_calibrated:
-                        last_valid_pos = pos
-                        if settings.movement_mode == "cursor":
-                            if settings.eye_pos_mode == "absolute":
-                                ## absolute positioning
-                                ## estimates where you're looking on screen
-                                tpos = transform_pos(
-                                    pos,
-                                    left,
-                                    right,
-                                    top,
-                                    bottom,
-                                    screen_left,
-                                    screen_right,
-                                    screen_bottom,
-                                    screen_top
-                                )
+            if face_tracker.found_eyes():
+                # find the offset of the pupils
+                pos = face_tracker.get_average_eye_offset(mode=settings.eye_trace_mode)
+            
+                if settings.is_calibrated:
+                    if settings.movement_mode == "cursor":
+                        if settings.eye_pos_mode == "absolute":
+                            ## absolute positioning
+                            ## estimates where you're looking on screen
+                            tpos = transform_pos(
+                                pos,
+                                left,
+                                right,
+                                top,
+                                bottom,
+                                screen_left,
+                                screen_right,
+                                screen_bottom,
+                                screen_top
+                            )
 
-                                int_pos = int(tpos[0]), int(tpos[1])
-                                pg.moveTo(int_pos[0], int_pos[1])
-                            elif settings.eye_pos_mode == "relative":
-                                ## relative positioning
-                                ## moves in 45-px increments
-                                if pos[0] < left//2: pg.moveRel(-45, 0)
-                                elif pos[0] > right//2: pg.moveRel(45, 0)
-                                
-                                if pos[1] > top: pg.moveRel(0, -45)
-                                elif pos[1] < bottom: pg.moveRel(0, 45)
-                        elif settings.eye_pos_mode == "scroll":
-                            if pos[0] < left//2: pg.hscroll(-45)
-                            elif pos[0] > right//2: pg.hscroll(45)
+                            position_group.append(tpos)
+
+                            # stabilization
+                            if len(position_group) >= settings.mouse_stabilization:
+                                x_sum = 0
+                                y_sum = 0
+                                for x, y in position_group:
+                                    x_sum += x
+                                    y_sum += y
+                                x_avg = (x_sum/len(position_group))
+                                y_avg = (y_sum/len(position_group))
+
+                                pg.moveTo(x_avg, y_avg)
+
+                                position_group.clear()
+
+                        elif settings.eye_pos_mode == "relative":
+                            ## relative positioning
+                            ## moves in 45-px increments
+                            if pos[0] < left//2: pg.moveRel(-45, 0)
+                            elif pos[0] > right//2: pg.moveRel(45, 0)
                             
-                            if pos[1] > top: pg.vscroll(-45)
-                            elif pos[1] < bottom: pg.vscroll(45)
-                else:
-                    if not settings.has_topleft:
-                        # tell the user what to do
-                        if not settings.msg_topleft:
-                            settings.msg_topleft = True
-
-                            print("Look at the top left and say \"ready\".")
+                            if pos[1] > top: pg.moveRel(0, -45)
+                            elif pos[1] < bottom: pg.moveRel(0, 45)
+                    elif settings.eye_pos_mode == "scroll":
+                        if pos[0] < left//2: pg.hscroll(-45)
+                        elif pos[0] > right//2: pg.hscroll(45)
                         
-                        # wait for them to say they're ready
+                        if pos[1] > top: pg.vscroll(-45)
+                        elif pos[1] < bottom: pg.vscroll(45)
+
+            if not settings.is_calibrated:
+                for corner in settings.has:
+                    if not settings.has[corner]:
+                        # tell the user what to do
+                        if not settings.msg[corner]:
+                            settings.msg[corner] = True
+                            print("Look at the", corner, "corner, and say 'ready'.")
+
                         if settings.said_ready:
-                            left, top = last_valid_pos
-                            settings.has_topleft = True
                             settings.said_ready = False
+                            pos_x, pos_y = pos
 
-                            print("Saved Top Left at ", left, top)
-                            playsound('sounds/correct.mp3')
-                        
-                    elif not settings.has_bottomright:
-                        # tell the user what to do
-                        if not settings.msg_bottomright:
-                            settings.msg_bottomright = True
-
-                            print("Look at the bottom right and say \"ready\".")
-                        
-                        # wait for them to say they're ready
-                        if settings.said_ready:
-                            right, bottom = last_valid_pos
-                            settings.has_bottomright = True
-                            settings.said_ready = False
-
-                            print("Saved Bottom Right at ", right, bottom)
-                            playsound('sounds/correct.mp3')
-
-                    else:
-                        settings.is_calibrated = True
-            elif settings.mode == "nose":  #### NOSE TRACKING ####
-                pos = face_tracker.find_nose()
-
-                nose_x, nose_y = pos
-
-                if not settings.is_calibrated:
-                    if not settings.has_nose_center:
-                        # tell the user what to do
-                        if not settings.msg_nose_center:
-                            print("Position your nose in the center of the screen and say \"ready\"")
-                            settings.msg_nose_center = True
-                        
-                        # wait for the use to say that they're ready
-                        if settings.said_ready:
-                            nose_center_x, nose_center_y = pos
+                            if 'left' in corner:
+                                left_sum += pos_x
+                            elif 'right' in corner:
+                                right_sum += pos_x
                             
-                            settings.said_ready = False
-                            settings.has_nose_center = True
+                            if 'top' in corner:
+                                top_sum += pos_y
+                            elif 'bottom' in corner:
+                                bottom_sum += pos_y
 
-                            playsound('sounds/correct.mp3')
+                            settings.has[corner] = True
 
-                    elif not settings.has_nose_move:
-                        # tell the user what to do
-                        if not settings.msg_nose_move:
-                            print("Move your nose around a little bit")
-                            settings.msg_nose_move = True
+                            playsound('sounds/success.mp3')
+                        break
+                if all(settings.has.values()):
+                    print("Finished calibrating")
+                    settings.is_calibrated = True
+                    left = left_sum/2
+                    right = right_sum/2
+                    top = top_sum/2
+                    bottom = bottom_sum/2
 
-                        # wait to collect sample data based on nose position
-                        if len(nose_x_dists) < 100 and len(nose_y_dists) < 100:
-                                nose_dist = 0
-                                if nose_center_x and nose_center_y:
-                                    nose_dist = ((nose_x - nose_center_x) ** 2 + (nose_y - nose_center_y) ** 2) ** 0.5
-                                if nose_dist > 20:
-                                    nose_x_dists.append(nose_center_x - pos[0])
-                                    nose_y_dists.append(nose_center_y - pos[1])
-                        else:
-                            max_x_dist = max(nose_x_dists)
-                            nose_x_move = max_x_dist * 1.5
+                    # clear the variables for the next time
+                    left_sum = right_sum = top_sum = bottom_sum = 0
+        
+        elif settings.mode == "nose":  #### NOSE TRACKING ####
+            if face_tracker.landmarks:
+                nose_x, nose_y = face_tracker.find_nose()
 
-                            max_y_dist = max(nose_y_dists)
-                            nose_y_move = max_y_dist * 1.5
-                            settings.has_nose_move = True
-
-                            print("Nose calibration fit to a", (nose_x_move * 2), "x", (nose_y_move * 2), "box")
-                            playsound('sounds/correct.mp3')
-                    else:
-                        settings.is_calibrated = True
-                else: # it's calibrated
+                if settings.is_calibrated:
                     nose_offset_x = nose_x - nose_center_x
                     nose_offset_y = nose_y - nose_center_y
 
@@ -211,13 +181,78 @@ def run_main():
                             screen_top
                         )
 
-                        pg.moveTo(*relative_pos)
+                        position_group.append(relative_pos)
+
+                        # stabilization
+                        if len(position_group) >= settings.mouse_stabilization:
+                            x_sum = 0
+                            y_sum = 0
+                            for x, y in position_group:
+                                x_sum += x
+                                y_sum += y
+                            x_avg = x_sum / len(position_group)
+                            y_avg = y_sum / len(position_group)
+
+                            pg.moveTo(x_avg, y_avg)
+
+                            position_group.clear()
+
                     elif settings.movement_mode == 'scroll':
                         # scroll in the requested direction
                         if abs(nose_offset_x) > 20:
                             pg.hscroll(nose_offset_x)
                         if abs(nose_offset_y) > 20:
                             pg.vscroll(-nose_offset_y)
+
+                else: # it's not calibrated
+                    if not settings.has_nose_center:
+                        # tell the user what to do
+                        if not settings.msg_nose_center:
+                            print("Center your nose on the screen, and say \"ready\" to calibrate the center.")
+
+                            settings.msg_nose_center = True
+                        
+                        # wait for the use to say that they're ready
+                        if settings.said_ready:
+                            nose_center_x, nose_center_y = nose_x, nose_y
+                            
+                            settings.said_ready = False
+                            settings.has_nose_center = True
+
+                            playsound('sounds/success.mp3')
+
+                    elif not settings.has_nose_move:
+                        # tell the user what to do
+                        if not settings.msg_nose_move:
+                            print("Move your nose around a little bit")
+                            settings.msg_nose_move = True
+
+                        # wait to collect sample data based on nose position
+                        if len(nose_x_dists) < 100 and len(nose_y_dists) < 100:
+                                nose_dist = 0
+                                if nose_center_x and nose_center_y:
+                                    nose_dist = ((nose_x - nose_center_x) ** 2 + (nose_y - nose_center_y) ** 2) ** 0.5
+
+                                if nose_dist > 20:
+                                    nose_x_dists.append(nose_center_x - nose_x)
+                                    nose_y_dists.append(nose_center_y - nose_y)
+                        else:
+                            max_x_dist = max(nose_x_dists)
+                            nose_x_move = max_x_dist * 1.5
+
+                            max_y_dist = max(nose_y_dists)
+                            nose_y_move = max_y_dist * 1.5
+                            settings.has_nose_move = True
+
+                            print("Nose calibration fit to a", (nose_x_move * 2), "x", (nose_y_move * 2), "box")
+                            playsound('sounds/success.mp3')
+                    else:
+                        settings.is_calibrated = True
+
+                        # clear the storage for next time
+                        nose_x_dists = []
+                        nose_y_dists = []
+                    
 
         # option to exit by pressing Q
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -240,21 +275,20 @@ def stop_tracker():
     settings.main_thread.join()
     
 def start_speech_to_text(typing_on=True, launcher_on=True):
-    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=False, args = (typing_on, launcher_on))
+    settings.sst_active = True
+    speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=False)
     speech_thread.start()
 
 if __name__ == "__main__":
-    typing_on = launcher_on = True
-
     print("Booting EyeOS")
 
     if len(sys.argv) > 1:
-        typing_on = sys.argv[1] != "notyping"
+        settings.typing_on = sys.argv[1] != "notyping"
         print("Typing turned off")
     if len(sys.argv) > 2:
-        launcher_on = sys.argv[2] != "launcher"
+        settings.launcher_on = sys.argv[2] != "launcher"
         print("Launcher turned off")
 
-    print("Start by saying \"eye mode\" or \"nose mode\", or simply by using the speech-to-text keyboard!")
+    print("To turn on eye tracking or nose tracking, say \"eye mode\" or \"nose mode\".")
     
-    start_speech_to_text(typing_on=typing_on, launcher_on=launcher_on)
+    start_speech_to_text()
