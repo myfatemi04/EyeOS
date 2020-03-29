@@ -6,7 +6,7 @@ import AppIcon from './svg/app.svg';
 import FaceIcon from './svg/face.svg';
 
 class HomePage extends React.Component {
-  public render() {
+  render() {
     return (
       <div className="text-white w-full mx-auto min-h-screen bg-secondary decorated-part">
         <div className="absolute flex flex-grow items-center h-full left-0 p-10 bg-main">
@@ -28,9 +28,9 @@ class HomePage extends React.Component {
               className="mt-3"
               title="App Launcher"
               description="Open an app using text to speech"
-              link="/app/applauncher"
+              link="/app/launcher"
               icon={AppIcon}
-              iconColor="#E5956B"
+              iconColor="#d7797a"
             />
             <TabItem
               className="mt-3"
