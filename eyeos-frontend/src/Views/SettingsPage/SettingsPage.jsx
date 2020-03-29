@@ -1,6 +1,40 @@
 import React from 'react';
-
 class SettingsPage extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      eyeTrackingOn: false,
+    }
+    this.toggleEyeOS = this.toggleEyeOS.bind(this);
+  }
+
+  componentDidMount() {
+    this.ipc = window.ipcRenderer;
+  }
+
+  toggleEyeOS() {
+    window.ipcRenderer.on("eyeOS-startup-log", (event, arg) => {
+      if(arg.err) console.log(arg.err);
+      else console.log(arg.msg)
+    })
+    window.ipcRenderer.on("eyeOS-kill", (event, arg) => {
+      console.log("Turned off eyeOS")
+      this.setState({
+        eyeTrackingOn: false
+      })
+    })
+    window.ipcRenderer.on("eyeOS-started", (event, arg) => {
+      console.log("eyeOS started")
+      this.setState({
+        eyeTrackingOn: true
+      })
+    })
+    if(!this.state.eyeTrackingOn)
+      window.ipcRenderer.send('start-eyeOS', true);
+    else 
+      window.ipcRenderer.send('stop-eyeOS', true)
+  }
+
   render() {
     return (
       <div className="relative p-8 text-white pb-12">
@@ -12,7 +46,7 @@ class SettingsPage extends React.Component {
             Start using EyeOS's eye tracking for motion control! Please follow the onscreen prompts when calibrating.
             You can recalibrate by saying "recalibrate"
           </div>
-          <button className="bg-green-500 hover:bg-green-700 text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-none">Enable</button>
+          <button onClick={this.toggleEyeOS} className={(!this.state.eyeTrackingOn ? "bg-green-500 hover:bg-green-700" : "bg-red-500") +  " text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-"}>{this.state.eyeTrackingOn ? "Disable" : "Enable"}</button>
         </div>
         <div className="mt-4 p-4 rounded-md bg-secondary block max-w-xl">
           <div className="text-xl font-bold">Text To Speech</div>

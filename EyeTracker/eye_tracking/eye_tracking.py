@@ -17,6 +17,9 @@ def ints(p):
 def pxy(p):
     return p.x, p.y
 
+def point_dist(a, b):
+    return((a.x-b.x)**2+(a.y-b.y)**2)**0.5
+
 class EyeTracker(object):
     def __init__(self):
         self.landmarks = None
@@ -47,8 +50,8 @@ class EyeTracker(object):
         try:
             landmarks = self._predictor(frame, faces[0])
             self.landmarks = landmarks
-            self.eye_left = Eye(frame, landmarks, 0, self.calibration)
-            self.eye_right = Eye(frame, landmarks, 1, self.calibration)
+            self.eye_left = Eye(self.frame, landmarks, 0, self.calibration)
+            self.eye_right = Eye(self.frame, landmarks, 1, self.calibration)
 
         except IndexError:
             self.eye_left = None
@@ -97,11 +100,16 @@ class EyeTracker(object):
 
     def is_blinking(self):
         if self.eye_left and self.eye_right:
-            return (self.left_openness() + self.right_openness()) / 2 < 0.06
+            return self.left_blinking() and self.right_blinking()
+        return False
 
-        # if self.pupils_located:
-        #     blinking_ratio = (self.eye_left.blinking + self.eye_right.blinking) / 2
-        #     return blinking_ratio > 7
+    def left_blinking(self):
+        if self.eye_left:
+            return self.eye_left.pupil.blinking
+
+    def right_blinking(self):
+        if self.eye_right:
+            return self.eye_right.pupil.blinking
 
     def get_left_center_offset_bad(self):
         return int(self.eye_left.center[0]), int(self.eye_left.center[1])
@@ -154,17 +162,24 @@ class EyeTracker(object):
         cv2.line(frame, (x - w, y), (x + w, y), color)
         cv2.line(frame, (x, y - w), (x, y + w), color)
 
+    def eye_aspect_ratio(self, points):
+        numer = point_dist(self.landmarks.part(points[1]), self.landmarks.part(points[5])) + point_dist(self.landmarks.part(points[2]), self.landmarks.part(points[4]))
+        denom = 2 * point_dist(self.landmarks.part(points[0]), self.landmarks.part(points[3]))
+        return numer/denom
+
     def left_openness(self):
-        if self.eye_left and self.eye_right:
-            pointa = self.landmarks.part(37)
-            pointb = self.landmarks.part(41)
-            return ((pointa.x - pointb.x) ** 2 + (pointa.y - pointb.y) ** 2) ** 0.5 / self.get_eye_dist()
+        return self.eye_aspect_ratio(Eye.LEFT_EYE_POINTS)
+        # if self.eye_left and self.eye_right:
+        #     pointa = self.landmarks.part(37)
+        #     pointb = self.landmarks.part(41)
+        #     return ((pointa.x - pointb.x) ** 2 + (pointa.y - pointb.y) ** 2) ** 0.5 / self.get_eye_dist()
 
     def right_openness(self):
-        if self.eye_left and self.eye_right:
-            pointa = self.landmarks.part(43)
-            pointb = self.landmarks.part(47)
-            return ((pointa.x - pointb.x) ** 2 + (pointa.y - pointb.y) ** 2) ** 0.5 / self.get_eye_dist()
+        return self.eye_aspect_ratio(Eye.RIGHT_EYE_POINTS)
+        # if self.eye_left and self.eye_right:
+        #     pointa = self.landmarks.part(43)
+        #     pointb = self.landmarks.part(47)
+        #     return ((pointa.x - pointb.x) ** 2 + (pointa.y - pointb.y) ** 2) ** 0.5 / self.get_eye_dist()
 
     def annotated_frame(self):
         frame = self.frame.copy()
@@ -182,8 +197,11 @@ class EyeTracker(object):
             self.draw_x(frame, *ints(real_left_center), color)
             self.draw_x(frame, *ints(real_right_center), color)
 
-            for point in [44, 46]:
-                p = self.landmarks.part(point)
-                self.draw_x(frame, p.x, p.y, color)
+            color = (0, 120, 255)
+            for pa, pb in [(37, 38), (40, 41), (43, 44), (46, 47)]:
+                a = self.landmarks.part(pa)
+                b = self.landmarks.part(pb)
+                cv2.line(frame, (a.x, a.y), (b.x, b.y), color)
+                # self.draw_x(frame, p.x, p.y, color)
 
         return frame

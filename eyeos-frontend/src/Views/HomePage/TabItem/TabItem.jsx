@@ -3,9 +3,8 @@ import { Link, withRouter } from "react-router-dom";
 import './TabItem.scss';
 
 class TabItem extends React.Component {
-  defaultProps = {
+  static defaultProps = {
     iconColor: "#000000",
-    className: "",
   }
 
   render() {
