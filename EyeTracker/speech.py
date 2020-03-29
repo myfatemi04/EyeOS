@@ -1,5 +1,5 @@
 import globals
-import query
+# import query
 
 def speech_to_text():
     import main
@@ -38,7 +38,7 @@ def speech_to_text():
                     globals.should_stop = True
                 elif text.lower().startswith("website "):
                     webbrowser.open('http://' + text.lower().split(" ", maxsplit=1)[1].replace(" ", ""))
-                elif text.lower() in ['done', 'complete']:
+                elif text.lower() in ['done', 'complete', 'completed', 'dime']:
                     globals.said_done = True
                 elif text.lower() == "click": 
                     g.click()
@@ -62,8 +62,8 @@ def speech_to_text():
                     os.system("Minecraft.exe")
                 elif text.lower() == "pie charm":
                     os.system("Pycharm.exe")
-                elif text.lower().startswith("query"):
-                    print(' '.join(query.webQuery(text.lower.split()[1:]))
+                # elif text.lower().startswith("query"):
+                #     print(' '.join(query.webQuery(text.lower.split()[1:])))
 
                 if text.lower() != 'scroll up':
                     last_scrollup = 400

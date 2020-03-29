@@ -14,6 +14,10 @@ class Calibration(object):
         self.thresholds_left = []
         self.thresholds_right = []
 
+    def recalibrate(self):
+        self.thresholds_left = []
+        self.thresholds_right = []
+
     def is_complete(self):
         return len(self.thresholds_left) >= self.nb_frames and len(self.thresholds_right) >= self.nb_frames
 

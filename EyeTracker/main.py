@@ -55,6 +55,8 @@ def recalibrate():
     top_left = bottom_right = msg_topleft = msg_bottomright = left = right = bottom = top = None
     globals.should_calibrate = True
 
+i = 0
+
 if __name__ == "__main__":
     speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=True)
     speech_thread.start()
@@ -64,10 +66,14 @@ if __name__ == "__main__":
     last_x, last_y = controller.pg.position()
 
     while not globals.should_stop:
+        i += 1
+        if i % 100 == 0:
+            tracker.calibration.recalibrate()
+        
         _, frame = cap.read()
         tracker.refresh(frame)
         frame = tracker.annotated_frame()
-        cv2.imshow("Tracker", frame)
+        # cv2.imshow("Tracker", frame)
 
         is_blinking = tracker.is_blinking()
         left_blink = tracker.left_blinking()
@@ -87,11 +93,11 @@ if __name__ == "__main__":
         else:
             frame_blinks.append(int(is_blinking))
         if not globals.should_calibrate:
-            if not is_blinking:
-                if left_blink and not last_left_blink:
-                    controller.right_click()
-                elif right_blink and not last_right_blink:
-                    controller.left_click()
+            # if not is_blinking:
+            #     if left_blink and not last_left_blink:
+            #         controller.right_click()
+            #     elif right_blink and not last_right_blink:
+            #         controller.left_click()
 
             if pos:
                 tpos = transform_pos(
@@ -116,7 +122,7 @@ if __name__ == "__main__":
                 if not globals.msg_topleft:
                     print("Look at the top left and say \"done\".")
                     globals.msg_topleft = True
-                if globals.said_done or (left_blink and not last_left_blink):
+                if globals.said_done:# or (left_blink and not last_left_blink):
                     left, top = last_valid_pos
                     print("Saved Top Left at ", left, top)
                     globals.has_topleft = True
@@ -125,7 +131,7 @@ if __name__ == "__main__":
                 if not globals.msg_bottomright:
                     print("Look at the bottom right and say \"done\".")
                     globals.msg_bottomright = True
-                if globals.said_done or (left_blink and not last_left_blink):
+                if globals.said_done:# or (left_blink and not last_left_blink):
                     right, bottom = last_valid_pos
                     globals.has_bottomright = True
                     print("Saved Bottom Right at ", right, bottom)

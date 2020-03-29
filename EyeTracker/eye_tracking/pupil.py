@@ -23,7 +23,7 @@ class Pupil(object):
 
     def detect_iris(self, eye_frame):
         self.iris_frame = self.image_processing(eye_frame, self.threshold)
-        # cv2.imshow("Iris", self.iris_frame)
+        cv2.imshow("Iris", self.iris_frame)
 
         contours, _ = cv2.findContours(self.iris_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
         contours = sorted(contours, key=cv2.contourArea)
