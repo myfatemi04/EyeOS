@@ -2,6 +2,11 @@ const {PythonShell} = require('python-shell');
 const path = require("path")
 
 class EyeOS {
+
+  constructor(typing=false) {
+    this.typing = typing
+  }
+
   start(event) {
     let options = {}
     if(process.platform === 'linux') {
@@ -10,7 +15,7 @@ class EyeOS {
         pythonPath: '/usr/bin/python3',
         pythonOptions: ['-u'],
       }
-      options.args = ['notyping']
+      options.args = [this.typing ? 'typing' : 'notyping']
     }
 
     if(process.platform === 'darwin') {
@@ -22,10 +27,9 @@ class EyeOS {
       options.args = ['notyping']
     }
   
-    console.log(path.join(__dirname, "../../EyeTracker/main.py"))
     let pyshell = new PythonShell(path.join(__dirname, "../../EyeTracker/main.py"), options);
     this.python_process = pyshell.childProcess;
-    event.sender.send('eyeOS-started', true);
+    
     pyshell.on('message', (message) => {
       console.log(message);
       event.sender.send('eyeOS-startup-log', {
@@ -39,8 +43,11 @@ class EyeOS {
           err: "An error occured"
         });
         console.log(err);
+      } else {
+        event.sender.send('eyeOS-startup-log', {
+          msg: "finished"
+        })
       }
-      console.log("finished eyeOS");
     })
   }
 
@@ -51,59 +58,10 @@ class EyeOS {
     }
   }
 
-  get isOn() {
-    return (this.python_process !== undefined && this.python_process !== null)
-  }
-}
-
-class SpeechToText {
-  start(event) {
-    let options = {}
-    if(process.platform === 'linux') {
-      console.log("using a manual path to python3")
-      options = {
-        pythonPath: '/usr/bin/python3',
-        pythonOptions: ['-u'],
-      }
-      options.args = ['typing']
-    }
-
-    if(process.platform === 'darwin') {
-      console.log("using a manual OSX path to python3")
-      options = {
-        pythonPath: '/usr/local/bin/python3',
-        pythonOptions: ['-u'],
-      }
-      options.args = ['notyping']
-    }
-  
-    console.log(path.join(__dirname, "../../EyeTracker/main.py"))
-    let pyshell = new PythonShell(path.join(__dirname, "../../EyeTracker/main.py"), options);
-    this.python_process = pyshell.childProcess;
-    event.sender.send('stt-started', true);
-    pyshell.on('message', (message) => {
-      console.log(message);
-      event.sender.send('stt-startup-log', {
-        msg: message
-      })
-    })
-  
-    pyshell.end((err) => {
-      if(err) { 
-        event.sender.send('stt-startup-log', {
-          err: "An error occured"
-        });
-        console.log(err);
-      }
-      console.log("finished stt");
-    })
-  }
-
-  kill() {
-    if(this.python_process) {
-      this.python_process.kill('SIGINT');
-      this.python_process = null;
-    }
+  restart(mode, event) {
+    this.typing = mode;
+    this.kill();
+    this.start(event);
   }
 
   get isOn() {
@@ -111,4 +69,4 @@ class SpeechToText {
   }
 }
 
-module.exports = {EyeOS, SpeechToText};
+module.exports = {EyeOS};
