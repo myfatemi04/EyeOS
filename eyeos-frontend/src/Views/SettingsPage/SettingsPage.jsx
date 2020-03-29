@@ -66,7 +66,6 @@ class SettingsPage extends React.Component {
     this.setState(newState);
     if(!this.state.eyeTrackingOn) {
       this.ipc.invoke('start-eyeOS');
-      this.props.alert("Tracking", "To turn on tracking, say \"Eye mode\" or \"Nose mode\"")
     } else {
       this.props.disableAlert()
       this.ipc.invoke('stop-eyeOS');
@@ -119,7 +118,7 @@ class SettingsPage extends React.Component {
   }
 
   processSTTLog(log) {
-
+    this.processEyeOSLog(log);
   }
 
   render() {
@@ -130,7 +129,8 @@ class SettingsPage extends React.Component {
         <div className="mt-4 p-4 rounded-md bg-secondary block max-w-xl">
           <div className="text-xl font-bold">Eye Tracking</div>
           <div className="mb-2">
-            Start using EyeOS's eye tracking for motion control! Please follow the onscreen prompts
+            Start using EyeOS's eye tracking for motion control! Please follow the onscreen prompts when calibrating.
+            You can recalibrate by saying "recalibrate"
           </div>
           <button 
             onClick={this.toggleEyeOS} 
