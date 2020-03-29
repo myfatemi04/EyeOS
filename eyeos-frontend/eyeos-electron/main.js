@@ -50,11 +50,10 @@ app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-var eyeOS = new EyeOS()
-var stt = new SpeechToText()
+var eyeOS = new EyeOS(false)
 
 ipcMain.handle('eyeOS-on', (event, arg) => {
-  return eyeOS.isOn;
+  return {on: eyeOS.isOn, typing: eyeOS.typing};
 })
 
 ipcMain.handle('start-eyeOS', (event, arg) => {
@@ -69,18 +68,12 @@ ipcMain.handle('stop-eyeOS', (event, arg) => {
     eyeOS.kill(event)
 })
 
-ipcMain.handle('stt-on', (event, arg) => {
-  return stt.isOn;
-})
-
-ipcMain.handle('start-stt', (event, arg) => {
-  console.log("starting stt");
-  if(!stt.isOn)
-    stt.start(event)
-})
-
-ipcMain.handle('stop-stt', (event, arg) => {
-  console.log('stopping stt')
-  if(stt.isOn)
-    stt.kill(event)
+ipcMain.handle('change-mode-eyeOS', (event, arg) => {
+  if(eyeOS.isOn) {
+    console.log('restarting in mode ' + (arg) ? "typing" : "notyping");
+    eyeOS.restart(arg.typing, event);
+  } else {
+    eyeOS.typing = arg.typing;
+    eyeOS.start(event);
+  }
 })

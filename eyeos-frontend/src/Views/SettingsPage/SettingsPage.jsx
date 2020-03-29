@@ -16,10 +16,11 @@ class SettingsPage extends React.Component {
     this.toggleEyeOS = this.toggleEyeOS.bind(this);
     this.toggleSTT = this.toggleSTT.bind(this);
     this.processEyeOSLog = this.processEyeOSLog.bind(this);
-    this.processSTTLog = this.processEyeOSLog.bind(this);
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    let newState = Object.assign({}, this.state);
+
     this.ipc = window.ipcRenderer;
     this.ipc.on("eyeOS-startup-log", (event, arg) => {
       if(arg.err && this.state.eyeTrackingOn) {
@@ -27,29 +28,22 @@ class SettingsPage extends React.Component {
         let newState = Object.assign({}, this.state);
         newState.errorEye = true;
         this.setState(newState)
-      } else this.processEyeOSLog(arg.msg);
+      } 
+      if(arg.msg === "finished") {
+        if(this.state.eyeTrackingOn) 
+          newState.eyeTrackingOn = false;
+        else if(this.state.sstOn)
+          newState.sstOn = false;
+        this.props.disableAlert()
+      }
+      this.processEyeOSLog(arg.msg);
     })
-    this.ipc.invoke("eyeOS-on", true)
-      .then((res) => {
-        let newState = Object.assign({}, this.state);
-        newState.eyeTrackingOn = res;
+    let res = await this.ipc.invoke("eyeOS-on", true);
+        if(res.typing == true)
+          newState.sttOn = res.on;
+        else
+          newState.eyeTrackingOn = res.on;
         this.setState(newState)
-      });
-
-    this.ipc.on("stt-startup-log", (event, arg) => {
-      if(arg.err && this.state.sttOn) {
-        this.props.disableAlert();
-        let newState = Object.assign({}, this.state);
-        newState.errorSTT = true;
-        this.setState(newState)
-      } else this.processSTTLog(arg.msg);
-    })
-    this.ipc.invoke("stt-on", true)
-      .then((res) => {
-        let newState = Object.assign({}, this.state);
-        newState.sttOn = res;
-        this.setState(newState)
-      });
   }
 
   componentWillUnmount() {
@@ -61,12 +55,15 @@ class SettingsPage extends React.Component {
   }
 
   toggleEyeOS() {
+    this.ipc.invoke('change-mode-eyeOS', {typing: false});
+
     let newState = Object.assign({}, this.state);
     newState.errorEye = false;
+    newState.sttOn = false;
     this.setState(newState);
+    
     if(!this.state.eyeTrackingOn) {
       this.ipc.invoke('start-eyeOS');
-      this.props.alert("Tracking", "To turn on tracking, say \"Eye mode\" or \"Nose mode\"")
     } else {
       this.props.disableAlert()
       this.ipc.invoke('stop-eyeOS');
@@ -80,14 +77,19 @@ class SettingsPage extends React.Component {
   }
 
   toggleSTT() {
+
+    this.ipc.invoke('change-mode-eyeOS', {typing: true});
+
     let newState = Object.assign({}, this.state);
     newState.errorSTT = false;
+    newState.eyeTrackingOn = false;
     this.setState(newState);
+
     if(!this.state.sttOn) {
-      this.ipc.invoke('start-stt', false);
+      this.ipc.invoke('start-eyeOS');
     } else {
       this.props.disableAlert()
-      this.ipc.invoke('stop-stt');
+      this.ipc.invoke('stop-eyeOS');
       let newState = Object.assign({}, this.state);
       newState.sttOn = false
       this.setState(newState)
@@ -98,8 +100,10 @@ class SettingsPage extends React.Component {
   }
 
   processEyeOSLog(log) {
-    if(this.state.eyeTrackingOn) {
-      if(log.includes("Booting EyeOS")) {
+    if(log) {
+      if(log.includes("Start by saying \"eye mode\"")) {
+        this.props.alert("Starting", "Start by saying \"eye mode\" or \"nose mode\"")
+      } else if(log.includes("Booting EyeOS")) {
         this.props.alert("Starting", "Enabling EyeOS")
       } else if(log.includes("Look at the top left")) {
         this.props.alert("Calibrating", "Look at the top left of your screen and say \"ready\"");
@@ -118,10 +122,6 @@ class SettingsPage extends React.Component {
     }
   }
 
-  processSTTLog(log) {
-
-  }
-
   render() {
     return (
       <div className="relative p-8 text-white pb-12">
@@ -130,10 +130,11 @@ class SettingsPage extends React.Component {
         <div className="mt-4 p-4 rounded-md bg-secondary block max-w-xl">
           <div className="text-xl font-bold">Eye Tracking</div>
           <div className="mb-2">
-            Start using EyeOS's eye tracking for motion control! Please follow the onscreen prompts
+            Start using EyeOS's eye tracking for motion control! Please follow the onscreen prompts when calibrating.
+            You can recalibrate by saying "recalibrate"
           </div>
           <button 
-            onClick={this.toggleEyeOS} 
+            onClick={() => {this.toggleEyeOS(false)}}  
             className={(!this.state.eyeTrackingOn ? "bg-green-500 hover:bg-green-700" : "bg-red-500") +  " text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-"}
           >
             {this.state.errorEye ? "ERROR" : this.state.eyeTrackingOn ? "Disable" : "Enable"}
@@ -145,7 +146,7 @@ class SettingsPage extends React.Component {
             Use speech-to-text as a keyboard input source! Speak to type words into your computer hands free!
           </div>
           <button 
-            onClick={this.toggleSTT}  
+            onClick={() => {this.toggleSTT(false)}}  
             className={(!this.state.sttOn ? "bg-green-500 hover:bg-green-700" : "bg-red-500") +  " text-white font-medium hover:shadow-xl duration-200 py-2 px-4 rounded outline-none focus:outline-"}
           >
             {this.state.errorSTT ? "ERROR" : this.state.sttOn ? "Disable" : "Enable"}
