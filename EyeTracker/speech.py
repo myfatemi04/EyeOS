@@ -81,14 +81,20 @@ def press_key(key, cmd=g.press):
         print("Key not found: ", key)
 
 def speech_to_text():
+    settings.sst_active = True
+
     r = sr.Recognizer()
     m = sr.Microphone()
 
     with m as source:
         r.adjust_for_ambient_noise(source)
+        print("You can start talking")
         while settings.sst_active:
-            audio = r.listen(source)
-            process_audio(r, audio)
+            try:
+                audio = r.listen(source, phrase_time_limit=5)
+                process_audio(r, audio)
+            except:
+                pass
 
 def process_audio(r, audio):
     import main
@@ -103,7 +109,7 @@ def process_audio(r, audio):
     except (sr.RequestError, sr.UnknownValueError):
         return
     
-    print(f'Microphone received: "{text}"')
+    print(f'I heard: "{text}"')
     lower = text.lower()
 
     if settings.typing_on:
@@ -177,18 +183,14 @@ def process_audio(r, audio):
         if not settings.tracker_active:
             main.start_tracker('eye')
         else:
-            settings.mode = 'eye'
             settings.recalibrate()
+            settings.mode = 'eye'
     elif lower in ['nose mode', 'snooze mode', 'start nose tracker']:
         if not settings.tracker_active:
             main.start_tracker('nose')
         else:
-            settings.mode = 'nose'
             settings.recalibrate()
-    
-    # part of calibration
-    elif lower == "ready":
-        settings.said_ready = True
+            settings.mode = 'nose'
 
     # mouse control
     if lower == "click" or lower == "quick": 
@@ -242,4 +244,5 @@ def process_audio(r, audio):
         webbrowser.open('http://www.google.com/search?q=' + query)
 
 if __name__ == "__main__":
-    speech_to_text(typing_on=True, launcher_on=True)
+    speech_to_text()
+

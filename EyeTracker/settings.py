@@ -26,8 +26,6 @@ eye_trace_mode = "eyelid"
 
 movement_mode = "cursor"
 
-said_ready = False
-
 tracker_active = False
 sst_active = False
 
@@ -40,6 +38,7 @@ def recalibrate():
     global is_calibrated
     global has_bottomright, has_topleft, has_nose_center, has_nose_move
     global msg_bottomright, msg_topleft, msg_nose_center, msg_nose_move
+
     is_calibrated = False
 
     has_bottomright = False
