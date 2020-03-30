@@ -1,6 +1,6 @@
 const spawn = require('child_process').spawn;
 const path = require("path")
-
+const {PythonShell} = require('python-shell')
 
 let opt = {}
 if (process.platform === 'linux') {
