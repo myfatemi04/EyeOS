@@ -24,13 +24,13 @@ class BottomNavbar extends React.Component {
           textColor="white"
           link="/app/launcher"
         />
-        <NavbarItem 
+        {/* <NavbarItem 
           className="ml-2" 
           text="Emotion" 
           color="#d1e7e8" 
           textColor="#3f8e84"
           link="/app/emotion"
-        />
+        /> */}
       </div>
     )
   }

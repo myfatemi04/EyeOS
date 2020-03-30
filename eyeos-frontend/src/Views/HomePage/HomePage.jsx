@@ -13,7 +13,7 @@ class HomePage extends React.Component {
           <div>
             <div className="font-semibold text-4xl">EyeOS</div>
             <p className="font-semibold text-md">
-              Using eye tracking and emotional intelligence to
+              Using eye tracking and machine learning to
               <span className="text-green-200"> empower</span>
             </p>
             <TabItem
@@ -32,14 +32,14 @@ class HomePage extends React.Component {
               icon={AppIcon}
               iconColor="#d7797a"
             />
-            <TabItem
+            {/* <TabItem
               className="mt-3"
               title="Emotional Awareness"
               description="Get advice based on emotional state"
               link="/app/emotion"
               icon={FaceIcon}
               iconColor="#39B7B7"
-            />
+            /> */}
           </div>
         </div>
       </div>
