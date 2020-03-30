@@ -54,6 +54,8 @@ def run_main():
     # keep track of frame number
     i = 0
 
+    countdown_start = 0
+
     # infinite loop until "exit"
     while settings.tracker_active:
         i += 1
@@ -128,10 +130,10 @@ def run_main():
                         # tell the user what to do
                         if not settings.msg[corner]:
                             settings.msg[corner] = True
-                            print("Look at the", corner, "corner, and say 'ready'.")
-
-                        if settings.said_ready:
-                            settings.said_ready = False
+                            print("Look at the", corner, "corner.")
+                            playsound('sounds/countdown.mp3') # play a countdown sound
+                            countdown_start = time.perf_counter()
+                        elif time.perf_counter() - countdown_start > 5:
                             pos_x, pos_y = pos
 
                             if 'left' in corner:
@@ -208,12 +210,13 @@ def run_main():
                     if not settings.has_nose_center:
                         # tell the user what to do
                         if not settings.msg_nose_center:
-                            print("Center your nose on the screen, and say \"ready\" to calibrate the center.")
+                            print("Center your nose on the screen.")
 
                             settings.msg_nose_center = True
-                        
-                        # wait for the use to say that they're ready
-                        if settings.said_ready:
+                            playsound('sounds/countdown.mp3') # play a countdown sound
+                            countdown_start = time.perf_counter()
+
+                        elif time.perf_counter() - countdown_start > 5:
                             nose_center_x, nose_center_y = nose_x, nose_y
                             
                             settings.said_ready = False
@@ -257,6 +260,7 @@ def run_main():
         # option to exit by pressing Q
         if cv2.waitKey(1) & 0xFF == ord('q'):
             settings.tracker_active = False
+            settings.sst_active = False
             break
 
     cap.release()
@@ -274,7 +278,7 @@ def stop_tracker():
     settings.tracker_active = False
     settings.main_thread.join()
     
-def start_speech_to_text(typing_on=True, launcher_on=True):
+def start_speech_to_text():
     settings.sst_active = True
     speech_thread = Thread(target=speech.speech_to_text, name="speech_to_text", daemon=False)
     speech_thread.start()
@@ -284,11 +288,12 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         settings.typing_on = sys.argv[1] != "notyping"
-        print("Typing turned off")
+        print("Typing: ", settings.typing_on)
     if len(sys.argv) > 2:
         settings.launcher_on = sys.argv[2] != "launcher"
-        print("Launcher turned off")
+        print("App launcher: ", settings.launcher_on)
 
     print("To turn on eye tracking or nose tracking, say \"eye mode\" or \"nose mode\".")
     
     start_speech_to_text()
+
