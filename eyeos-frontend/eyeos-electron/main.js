@@ -1,7 +1,7 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
-const {EyeOS, SpeechToText} = require('./wrapper')
+const {EyeOS, getAppList} = require('./wrapper')
  
 require('electron-reload')(__dirname, {
   electron: path.join(__dirname, '../', 'node_modules', '.bin', 'electron'),
@@ -50,7 +50,8 @@ app.on('activate', function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-var eyeOS = new EyeOS(false)
+let eyeOS = new EyeOS(false)
+let appList = getAppList()
 
 ipcMain.handle('eyeOS-on', (event, arg) => {
   return {on: eyeOS.isOn, typing: eyeOS.typing};
@@ -76,4 +77,8 @@ ipcMain.handle('change-mode-eyeOS', (event, arg) => {
     eyeOS.typing = arg.typing;
     eyeOS.start(event);
   }
+})
+
+ipcMain.handle('get-app-list', async (event, arg) => {
+  return await appList;
 })

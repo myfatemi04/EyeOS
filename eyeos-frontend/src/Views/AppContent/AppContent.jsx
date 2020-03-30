@@ -4,6 +4,7 @@ import './AppContent.scss';
 import BottomNavbar from '../../Components/BottomNavbar/BottomNavbar';
 import SettingsPage from '../SettingsPage/SettingsPage';
 import BackArrow from './svg/arrow_back.svg';
+import AppLauncherPage from '../AppLauncherPage/AppLauncherPage';
 
 class AppContent extends React.Component {
   constructor(props) {
@@ -51,6 +52,7 @@ class AppContent extends React.Component {
       <div>
         {alert}
         <Route path="/app/settings"><SettingsPage alert={this.alert} disableAlert={this.disableAlert}/></Route>
+        <Route path="/app/launcher"><AppLauncherPage/></Route>
         <BottomNavbar/>
       </div>
     );
