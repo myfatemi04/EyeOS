@@ -40,7 +40,7 @@ class AppLauncherPage extends React.Component {
 
   render() {
     return (
-      <div className="relative p-8 text-white pb-12">
+      <div className="relative p-8 text-white pb-24">
         <div className="text-3xl font-bold">App Launcher</div>
         <div className="text-lg text-gray-200 -my-1">Open apps using voice commands!</div>
         <div className="mt-4 p-4 rounded-md bg-secondary block max-w-xl">

@@ -1,4 +1,4 @@
-const { PythonShell } = require('python-shell');
+const spawn = require('child_process').spawn;
 const path = require("path")
 
 
@@ -24,41 +24,38 @@ class EyeOS {
 
   constructor(typing = false) {
     this.typing = typing
+    this.proc = null
   }
 
   start(event) {
-    let options = Object.assign({}, opt);
-    let pyshell = new PythonShell(path.join(__dirname, "../../EyeTracker/main.py"), options);
-    this.python_process = pyshell.childProcess;
+    this.proc = spawn('python3', ["../EyeTracker/main.py", (this.typing) ? "typing" : "notyping"])
 
-    options.args = [this.typing ? 'typing' : 'notyping']
-
-
-    pyshell.on('message', (message) => {
-      console.log(message);
+    this.proc.stdout.on('data', (message) => {
+      console.log(message.toString());
       event.sender.send('eyeOS-startup-log', {
-        msg: message
+        msg: message.toString()
       })
     })
 
-    pyshell.end((err) => {
-      if (err) {
-        event.sender.send('eyeOS-startup-log', {
-          err: "An error occured"
-        });
-        console.log(err);
-      } else {
-        event.sender.send('eyeOS-startup-log', {
-          msg: "finished"
-        })
-      }
+    this.proc.stderr.on('data', (err) => {
+      event.sender.send('eyeOS-startup-log', {
+        err: "An error occured"
+      });
+      console.log(err.toString());
+    })
+
+    this.proc.on('end', (err) => {
+      event.sender.send('eyeOS-startup-log', {
+        msg: "finished"
+      })
     })
   }
 
   kill() {
-    if (this.python_process) {
-      this.python_process.kill('SIGINT');
-      this.python_process = null;
+    if (this.proc) {
+      this.proc.stdin.pause();
+      this.proc.kill();
+      this.proc = null
     }
   }
 
@@ -69,7 +66,7 @@ class EyeOS {
   }
 
   get isOn() {
-    return (this.python_process !== undefined && this.python_process !== null)
+    return (this.proc !== undefined && this.proc !== null)
   }
 }
 
