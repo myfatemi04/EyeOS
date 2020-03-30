@@ -88,9 +88,13 @@ def speech_to_text():
 
     with m as source:
         r.adjust_for_ambient_noise(source)
+        print("You can start talking")
         while settings.sst_active:
-            audio = r.listen(source)
-            process_audio(r, audio)
+            try:
+                audio = r.listen(source, phrase_time_limit=5)
+                process_audio(r, audio)
+            except:
+                pass
 
 def process_audio(r, audio):
     import main
@@ -102,7 +106,7 @@ def process_audio(r, audio):
 
     try:
         text = r.recognize_google_cloud(audio, credentials_json=open("google-credentials.json").read()).strip()
-    except (sr.RequestError, sr.UnknownValueError) as e:
+    except (sr.RequestError, sr.UnknownValueError):
         return
     
     print(f'I heard: "{text}"')
@@ -240,6 +244,5 @@ def process_audio(r, audio):
         webbrowser.open('http://www.google.com/search?q=' + query)
 
 if __name__ == "__main__":
-    print("Starting up")
     speech_to_text()
 

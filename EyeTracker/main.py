@@ -34,7 +34,7 @@ def run_main():
 
     # groups cursor positions together to make the cursor more steady
     position_group = []
-
+    
     # used to scale up calibrations
     screen_left, screen_top = (0, 0)
     screen_right, screen_bottom = pg.size()
