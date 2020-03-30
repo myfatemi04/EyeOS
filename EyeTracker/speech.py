@@ -156,7 +156,7 @@ def process_audio(r, audio):
             g.press(lower.replace(" ", ""))
     
     # recalibrate the tracker
-    if "calibrate" in lower:
+    if "recalibrate" in lower:
         if settings.tracker_active:
             playsound('sounds/success.mp3')
 
@@ -217,6 +217,9 @@ def process_audio(r, audio):
         settings.launcher_on = True
     elif lower == "launcher off":
         settings.launcher_on = False
+
+    if "demo" in lower.split():
+        os.system("start \"\" python demo.py")
 
     # application controls
     # open a website
