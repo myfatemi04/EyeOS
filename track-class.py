@@ -3,14 +3,12 @@
 import cv2
 import numpy as np
 
-
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 detector_params = cv2.SimpleBlobDetector_Params()
 detector_params.filterByArea = True
 detector_params.maxArea = 1500
 detector = cv2.SimpleBlobDetector_create(detector_params)
-
 
 def detect_faces(img, cascade):
     gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -27,8 +25,7 @@ def detect_faces(img, cascade):
         return None
     for (x, y, w, h) in biggest:
         frame = img[y:y + h, x:x + w]
-    return {"frame": frame, "biggest": biggest[0]}
-
+    return frame
 
 def detect_eyes(img, cascade):
     gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -65,55 +62,57 @@ def blob_process(img, threshold, detector):
     keypoints = detector.detect(img)
     return keypoints
 
-
 def bruh(x):
     pass
 
-eyeX = 0
-eyeY = 0
-thresholdCalibrated = False
-threshold = 0
+class EyeTracker:
+    def __init__(self):
+        self.capture = cv2.VideoCapture(0)
+        self.shouldRun = True
+        self.threshold = 0
+        self.eyeX = 0
+        self.eyeY = 0
+        cv2.namedWindow("Frame")
+        cv2.createTrackbar("Manual Threshold Calibration", "Frame", 0, 255, bruh)
+    
+    def stop(self):
+        self.shouldRun = False
+        self.capture.release()
+        cv2.destroyAllWindows()
 
-def loop():
-    global eyeX, eyeY, threshold, thresholdCalibrated
-    cap = cv2.VideoCapture(0)
-    cv2.namedWindow('Frame')
-    while True:
-        _, frame = cap.read()
-        faces = detect_faces(frame, face_cascade)
-        if faces is not None:
-            face_frame = faces['frame']
-            biggest = faces['biggest']
+    def run(self):
+        global face_cascade
+        global eye_cascade
+        global detector
+        while self.shouldRun:
+            _, frame = self.capture.read()
+            face_frame = detect_faces(frame, face_cascade)
+            if face_frame is not None:
+                eyes = detect_eyes(face_frame, eye_cascade)
+                for eye in eyes:
+                    if eye is not None:
+                        self.threshold = cv2.getTrackbarPos('Manual Calibration (Threshold)', 'Frame')
+                        eye = cut_eyebrows(eye)
+                        keypoints = blob_process(eye, self.threshold, detector)
+                        pts = [i.pt for i in keypoints]
+                        if len(pts) > 0:
+                            sumX = sumY = 0
+                            for point in pts:
+                                sumX += point[0]
+                                sumY += point[1]
+                            self.eyeX = meanX = sumX / len(pts)
+                            self.eyeY = meanY = sumY / len(pts)
+                            print(self.eyeX, self.eyeY)
+                        else:
+                            print("No eyes found")
+                        
+                        eye = cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             
-            centerX = biggest[0] + biggest[2] // 2
-            centerY = biggest[1] + biggest[3] // 2
-            
-            cv2.rectangle(frame, (centerX - 1, centerY - 1), (centerX + 1, centerY + 1), 0.5)
-            eyes = detect_eyes(face_frame, eye_cascade)
-            for eye in eyes:
-                if eye is not None:
-                    eye = cut_eyebrows(eye)
-                    keypoints = blob_process(eye, threshold, detector)
-                    pts = [i.pt for i in keypoints]
-                    if len(pts) > 0:
-                        thresholdCalibrated = True
-                        sumX = sumY = 0
-                        for point in pts:
-                            sumX += point[0]
-                            sumY += point[1]
-                        meanX = sumX / len(pts)
-                        meanY = sumY / len(pts)
-                        eyeX, eyeY = meanX - centerX, meanY - centerY
-                    else:
-                        if not thresholdCalibrated:
-                            print("Trying threshold", threshold)
-                            threshold += 5
-                    
-                    cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        cv2.imshow('Frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            cv2.imshow('Frame', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.stop()
+                break
 
-    cap.release()
-    cv2.destroyAllWindows()
-
+if __name__ == "__main__":
+    tracker = EyeTracker()
+    tracker.run()
