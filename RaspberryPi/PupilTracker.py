@@ -43,11 +43,24 @@ def process_image(image):
 
     # Reduce noise by eroding and dilating the parts that survived erosion
     image = cv2.erode(image, kernel, iterations=1)
-    image = cv2.dilate(image, kernel, iterations=1)
+    image = cv2.dilate(image, kernel, iterations=2)
 
-    contours = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    cv2.imshow(window_name, image)
+    contours_stats = [(contour, cv2.contourArea(contour), cv2.boundingRect(contour)) for contour in contours]
+    
+    possible_eyes = []
+
+    for contour, area, rectangle in contours_stats:
+        rect_x, rect_y, rect_width, rect_height = rectangle
+        if 100 < area < 600:
+            if (5/4) > (rect_width / rect_height) > (4/5):
+                possible_eyes.append(contour)
+
+    annotated = cv2.drawContours(original, possible_eyes, -1, (0, 255, 0), 3)
+    
+    cv2.imshow("Binary image", image)
+    cv2.imshow(window_name, annotated)
 
 def set_threshold_min(new_threshold_min):
     global threshold_min
@@ -57,17 +70,27 @@ def set_threshold_max(new_threshold_max):
     global threshold_max
     threshold_max = new_threshold_max
 
-def create_kernel(kernel_size):
+def create_kernel(kernel_size, mode='vertical'):
     global kernel
 
     width = kernel_size // 2
-    
-    kernel = np.array([
-        [
-            int(((x - width) ** 2 + (y - width) ** 2) ** 0.5 <= width)
-            for x in range(kernel_size)
-        ] for y in range(kernel_size)
-    ]).astype(np.uint8)
+
+    if mode == 'circle':
+        kernel = np.array([
+            [
+                int(((x - width) ** 2 + (y - width) ** 2) ** 0.5 <= width)
+                for x in range(kernel_size)
+            ] for y in range(kernel_size)
+        ]).astype(np.uint8)
+
+    elif mode == 'cross':
+        kernel = np.zeros((kernel_size, kernel_size), dtype=np.uint8)
+        kernel[width, :] = 1
+        kernel[:, width] = 1
+
+    elif mode == 'vertical':
+        kernel = np.zeros((kernel_size, kernel_size), dtype=np.uint8)
+        kernel[:, width] = 1
 
     print(kernel)
 
