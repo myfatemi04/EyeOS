@@ -39,7 +39,7 @@ def process_image(image):
 
     # image = cv2.equalizeHist(image)
     # image = cv2.GaussianBlur(image, (3, 3), 1)
-    _, image = cv2.threshold(image, threshold_min, threshold_max, cv2.THRESH_BINARY_INV)
+    _, image = cv2.threshold(image, THRESHOLD_MIN, THRESHOLD_MAX, cv2.THRESH_BINARY_INV)
 
     # Reduce noise by eroding and dilating the parts that survived erosion
     image = cv2.erode(image, kernel, iterations=1)
@@ -53,9 +53,19 @@ def process_image(image):
 
     for contour, area, rectangle in contours_stats:
         rect_x, rect_y, rect_width, rect_height = rectangle
-        if 100 < area < 600:
-            if (5/4) > (rect_width / rect_height) > (4/5):
-                possible_eyes.append(contour)
+        rect_area = rect_width * rect_height
+
+        if area / rect_area < MIN_BOUNDING_RECT_AREA:
+            continue
+
+        if area > MAX_AREA or area < MIN_AREA:
+            continue
+        
+        aspect_ratio = (rect_width / rect_height)
+        if aspect_ratio < MIN_ASPECT_RATIO or aspect_ratio > 1 / MIN_ASPECT_RATIO:
+            continue
+        
+        possible_eyes.append(contour)
 
     annotated = cv2.drawContours(original, possible_eyes, -1, (0, 255, 0), 3)
     
@@ -63,12 +73,12 @@ def process_image(image):
     cv2.imshow(window_name, annotated)
 
 def set_threshold_min(new_threshold_min):
-    global threshold_min
-    threshold_min = new_threshold_min
+    global THRESHOLD_MIN
+    THRESHOLD_MIN = new_threshold_min
 
 def set_threshold_max(new_threshold_max):
-    global threshold_max
-    threshold_max = new_threshold_max
+    global THRESHOLD_MAX
+    THRESHOLD_MAX = new_threshold_max
 
 def create_kernel(kernel_size, mode='vertical'):
     global kernel
@@ -96,14 +106,20 @@ def create_kernel(kernel_size, mode='vertical'):
 
 window_name = "Circle detection testing"
 
-threshold_min = 40
-threshold_max = 255
+THRESHOLD_MIN = 40
+THRESHOLD_MAX = 255
+
+MIN_AREA = 100
+MAX_AREA = 500
+
+MIN_ASPECT_RATIO = 4 / 5 # less than 1
+MIN_BOUNDING_RECT_AREA = 0.80 * 3.14 / 4 # must be approximately a circle within the rectangle
 
 create_kernel(5)
 
 cv2.namedWindow(window_name)
-cv2.createTrackbar("Threshold Min", window_name, threshold_min, 255, set_threshold_min)
-cv2.createTrackbar("Threshold Max", window_name, threshold_max, 255, set_threshold_max)
+cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
+cv2.createTrackbar("Threshold Max", window_name, THRESHOLD_MAX, 255, set_threshold_max)
 cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: create_kernel(x * 2 + 1))
 
 use_video_capture()
