@@ -21,7 +21,7 @@ def use_pi():
         process_image(image)
 
 def use_video_capture():
-    video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture(1)
     
     while True:
         _, frame = video_capture.read()
@@ -33,12 +33,12 @@ def use_video_capture():
             break
 
 def process_image(image):
-    original = image.copy()
+    annotated = image.copy()
 
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
     # image = cv2.equalizeHist(image)
-    # image = cv2.GaussianBlur(image, (3, 3), 1)
+    image = cv2.GaussianBlur(image, (3, 3), 1)
     _, image = cv2.threshold(image, THRESHOLD_MIN, THRESHOLD_MAX, cv2.THRESH_BINARY_INV)
 
     # Reduce noise by eroding and dilating the parts that survived erosion
@@ -47,11 +47,12 @@ def process_image(image):
 
     contours, _ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    contours_stats = [(contour, cv2.contourArea(contour), cv2.boundingRect(contour)) for contour in contours]
-    
     possible_eyes = []
 
-    for contour, area, rectangle in contours_stats:
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        rectangle = cv2.boundingRect(contour)
+
         rect_x, rect_y, rect_width, rect_height = rectangle
         rect_area = rect_width * rect_height
 
@@ -64,10 +65,20 @@ def process_image(image):
         aspect_ratio = (rect_width / rect_height)
         if aspect_ratio < MIN_ASPECT_RATIO or aspect_ratio > 1 / MIN_ASPECT_RATIO:
             continue
+
+        M = cv2.moments(contour)
+
+        if M["m00"] == 0:
+            continue
+
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+
+        annotated = cv2.drawMarker(annotated, (cX, cY), (0, 255, 255))
         
         possible_eyes.append(contour)
 
-    annotated = cv2.drawContours(original, possible_eyes, -1, (0, 255, 0), 3)
+    annotated = cv2.drawContours(annotated, possible_eyes, -1, (0, 255, 0), 3)
     
     cv2.imshow("Binary image", image)
     cv2.imshow(window_name, annotated)
@@ -109,11 +120,11 @@ window_name = "Circle detection testing"
 THRESHOLD_MIN = 40
 THRESHOLD_MAX = 255
 
-MIN_AREA = 100
-MAX_AREA = 500
+MIN_AREA = 1000
+MAX_AREA = 1000000
 
-MIN_ASPECT_RATIO = 4 / 5 # less than 1
-MIN_BOUNDING_RECT_AREA = 0.80 * 3.14 / 4 # must be approximately a circle within the rectangle
+MIN_ASPECT_RATIO = 2 / 3 # less than 1
+MIN_BOUNDING_RECT_AREA = 0.5 # must be approximately a circle within the rectangle
 
 create_kernel(5)
 
