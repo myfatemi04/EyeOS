@@ -16,7 +16,9 @@ class Pupil(object):
     def image_processing(eye_frame, threshold):
         kernel = np.ones((3, 3), np.uint8)
         new_frame = cv2.bilateralFilter(eye_frame, 10, 15, 15)
+        new_frame = cv2.equalizeHist(new_frame)
         new_frame = cv2.erode(new_frame, kernel, iterations=3)
+        new_frame = cv2.dilate(new_frame, kernel, iterations=3)
         new_frame = cv2.threshold(new_frame, threshold, 255, cv2.THRESH_BINARY)[1]
 
         return new_frame

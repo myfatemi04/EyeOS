@@ -4,6 +4,8 @@ from eye_tracker import EyeTracker
 eyetracker = EyeTracker()
 webcam = cv2.VideoCapture(0)
 
+print("Press [esc] to exit")
+
 while True:
     ret, frame = webcam.read()
 
@@ -12,7 +14,6 @@ while True:
 
         frame = eyetracker.annotated_frame()
         text = ""
-
 
         cv2.putText(frame, text, (90, 60), cv2.FONT_HERSHEY_DUPLEX, 1.6, (147, 58, 31), 2)
 
