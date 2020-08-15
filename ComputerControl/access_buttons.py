@@ -1,0 +1,1 @@
+""" Goal: to create a way to control the computer using only a mouse. """
