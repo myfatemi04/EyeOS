@@ -1,0 +1,25 @@
+{
+    "files.associations": {
+        "algorithm": "cpp",
+        "chrono": "cpp",
+        "codecvt": "cpp",
+        "deque": "cpp",
+        "fstream": "cpp",
+        "limits": "cpp",
+        "list": "cpp",
+        "mutex": "cpp",
+        "random": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp",
+        "type_traits": "cpp",
+        "xhash": "cpp",
+        "xlocale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "ostream": "cpp"
+    }
+}
