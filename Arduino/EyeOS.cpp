@@ -4,13 +4,11 @@
 /* STEPS
 
 Need info:
-  Distance from computer
-  Four corners of computer screen
-  Eye position
-  Eye rotation
+  Four corners of computer screen in 3D
+  Eye position (3D point)
+  Eye direction (3D vector)
 
 1) Use eye position/rotation to make a 3d gaze direction
-
 2) Map that to the computer box
 
 */
@@ -44,12 +42,9 @@ struct Ray3D {
   Vector3D direction; 
 };
 
-IRPoint topLeft;
 IRPoint topLeftMarker; // a little to the left of topleft
 IRPoint leftTopMarker; // a little under topLeft
-IRPoint topRight;
-IRPoint bottomLeft;
-IRPoint bottomRight;
+IRPoint topLeft, topRight, bottomLeft, bottomRight;
 
 const Point3D EYE_POSITION = {-3.0, 0.0, -1.0};
 
@@ -71,10 +66,13 @@ bool isLeftBlinking() { return false; }
 bool isRightBlinking() { return false; }
 
 // returns the Points on the screen in 3d space
-struct Point3D* getScreenCorners3D(IRPoint* screenCorners2D) {}
+struct Point3D* getScreenCorners3D(IRPoint* screenCorners2D) {
+  
+}
 
-struct Ray3D getLeftEyeState() {} // Get rotations of eyes
-struct Ray3D getRightEyeState() {} // Get rotations of eyes
+// get rays of eye
+struct Ray3D getLeftEyeState() {}
+struct Ray3D getRightEyeState() {}
 
 /* Finds cross product of two vectors by
 calculating this determinant:
