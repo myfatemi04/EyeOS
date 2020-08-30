@@ -28,7 +28,7 @@ def flatten_plane_and_intersection(plane, intersection):
     pass
 
 # Finds the location within the plane of the eye
-def get_plane_location(plane, plane_point):
+def get_eye_location_in_plane(plane, point):
     pass
 
 # Calculates the intersection of a ray and a plane.
