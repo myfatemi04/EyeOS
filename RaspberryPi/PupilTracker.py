@@ -1,5 +1,41 @@
 import cv2
 import numpy as np
+import time
+
+from collections import namedtuple
+
+Point2D = namedtuple("Point2D", ['x', 'y'])
+Point3D = namedtuple("Point3D", ['x', 'y', 'z'])
+
+goal_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
+
+def get_perspective_transform(calibration_square):
+    matrix = cv2.findHomography(calibration_square, goal_square)
+
+# Reads markers found by sensor
+def get_all_markers():
+    pass
+
+# Extracts the calibration square from a list of all markers found
+def get_calibration_square_corners(markers):
+    pass
+
+# Extracts the screen corners from a list of all markers found
+def get_screen_corners(markers):
+    pass
+
+def flatten_plane_and_intersection(plane, intersection):
+    pass
+
+# Finds the location within the plane of the eye
+def get_plane_location(plane, plane_point):
+    pass
+
+# Calculates the intersection of a ray and a plane.
+# In this case, the ray is the eye's gaze ray, and the plane is the
+# computer screen.
+def calculate_ray_plane_intersection(ray, plane):
+    pass
 
 def use_pi():
     from picamera.array import PiRGBArray
