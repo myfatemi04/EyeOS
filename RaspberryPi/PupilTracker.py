@@ -12,6 +12,7 @@ goal_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
 sensor_width = 98
 left_offset = -1
 right_offset = 1
+kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
 
 def get_3d_point(left_perspective_point, right_perspective_point, left_offset, right_offset, sensor_width):
     # y should not change between sensors, so we'll just take the mean
