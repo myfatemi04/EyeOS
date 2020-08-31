@@ -9,20 +9,36 @@ Point3D = namedtuple("Point3D", ['x', 'y', 'z'])
 
 goal_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
 
-def get_perspective_transform(calibration_square):
-    matrix = cv2.findHomography(calibration_square, goal_square)
+sensor_width = 98
+left_offset = -1
+right_offset = 1
 
-# Reads markers found by sensor
-def get_all_markers():
-    pass
+def get_3d_point(left_perspective_point, right_perspective_point, left_offset, right_offset, sensor_width):
+    # y should not change between sensors, so we'll just take the mean
+    # of the detected values
+    y = (left_perspective_point[1] + right_perspective_point[1]) / 2
 
-# Extracts the calibration square from a list of all markers found
-def get_calibration_square_corners(markers):
-    pass
+    # Here, we find the relative angle from the center of each sensor
+    # TODO: Update based on datasheet data
+    left_angle_tan = (left_perspective_point[0] - sensor_width / 2) / sensor_width
+    right_angle_tan = (right_perspective_point[0] - sensor_width / 2) / sensor_width
 
-# Extracts the screen corners from a list of all markers found
-def get_screen_corners(markers):
-    pass
+    # Now, we solve for Z based on linear equations.
+    # These are the starting equations (based on definition of tan)
+    # X = left_offset + Z * left_angle_tan
+    # X = right_offset + Z * right_angle_tan
+    # left_offset + Z * left_angle_tan = right_offset + Z * right_angle_tan
+    # left_offset - right_offset = Z * right_angle_tan - Z * left_angle_tan
+    # left_offset - right_offset = Z * (right_angle_tan - left_angle_tan)
+    # Z = (left_offset - right_offset) / (right_angle_tan - left_angle_tan)
+    
+    z = (left_offset - right_offset) / (right_angle_tan - left_angle_tan)
+    x = left_offset + z * left_angle_tan
+
+    return (x, y, z)
+
+def get_homography_matrix(calibration_square):
+    return cv2.findHomography(calibration_square, goal_square)
 
 def flatten_plane_and_intersection(plane, intersection):
     pass
