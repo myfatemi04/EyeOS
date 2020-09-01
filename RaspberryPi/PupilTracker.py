@@ -14,6 +14,24 @@ left_offset = -1
 right_offset = 1
 kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
 
+marker_distance = 2
+
+def dist(a, b):
+    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
+
+# Returns the width and height
+def get_screen_dimensions(top_left, top_left_marker_right, top_left_marker_bottom, bottom_left, top_right):
+    left_pixel_length = dist(top_left, bottom_left)
+    top_pixel_length = dist(top_left, top_right)
+    top_marker_pixel_dist = dist(top_left, top_left_marker_right)
+    left_marker_pixel_dist = dist(top_left, top_left_marker_bottom)
+
+    # pixel distance of markers / real life distance = pixel length of side / real life length of side
+    top_length = top_pixel_length / (top_marker_pixel_dist / marker_distance)
+    left_length = left_pixel_length / (left_marker_pixel_dist / marker_distance)
+
+    return top_length, left_length
+
 def get_3d_point(left_perspective_point, right_perspective_point, left_offset, right_offset, sensor_width):
     # y should not change between sensors, so we'll just take the mean
     # of the detected values
