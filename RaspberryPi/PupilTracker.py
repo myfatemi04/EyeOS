@@ -4,15 +4,51 @@ import time
 
 from collections import namedtuple
 
-Point2D = namedtuple("Point2D", ['x', 'y'])
-Point3D = namedtuple("Point3D", ['x', 'y', 'z'])
+### REFERENCES
+# https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html?highlight=findhomography
+# 
 
-goal_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
+def test_homography():
+    points = get_target_points(100, 100)
+    homo, mask = cv2.findHomography(points, get_target_points(10, 10))
 
-sensor_width = 98
-left_offset = -1
-right_offset = 1
+    print("Homography Matrix")
+    print(homo)
+    print()
+
+    num, rotations, translations, norms = decompose_homography(homo)
+    
+    print("First rotation possibility")
+    print(rotations[0])
+    print()
+    
+    print("First translation possibility")
+    print(translations[0])
+    print()
+    
+    print("First normalization possibility")
+    print(norms[0])
+    print()
+
+    # For some reason, requires a contiguous array
+    # And also requires that the points are given as tuples
+    board = np.zeros((480, 640, 3), np.uint8)
+    board = np.ascontiguousarray(board)
+    board = cv2.rectangle(board, tuple(points[0]), tuple(points[2]), (255, 0, 0), 1)
+
+    cv2.imshow("Visualization", board)
+    cv2.waitKey(0)
+
 kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+
+center_x = center_y = 64
+focal_x = focal_y = 1
+
+camera_matrix = np.array([
+    [focal_x,      0, center_x],
+    [0,      focal_y, center_y],
+    [0,            0,        1]
+])
 
 marker_distance = 2
 
@@ -32,6 +68,18 @@ def get_screen_dimensions(top_left, top_left_marker_right, top_left_marker_botto
 
     return top_length, left_length
 
+# Given width and height, returns points of rectangle with that width/height
+def get_target_points(width, height):
+    return np.float32([[0, 0], [width, 0], [width, height], [0, height]])
+
+# https://docs.opencv.org/3.4/d9/d0c/group__calib3d.html#ga7f60bdff78833d1e3fd6d9d0fd538d92
+def decompose_homography(homography):
+    # This returns num, rotations, translations, normals
+    return cv2.decomposeHomographyMat(homography, camera_matrix)
+
+sensor_width = 98
+left_offset = -1
+right_offset = 1
 def get_3d_point(left_perspective_point, right_perspective_point, left_offset, right_offset, sensor_width):
     # y should not change between sensors, so we'll just take the mean
     # of the detected values
@@ -55,9 +103,6 @@ def get_3d_point(left_perspective_point, right_perspective_point, left_offset, r
     x = left_offset + z * left_angle_tan
 
     return (x, y, z)
-
-def get_homography_matrix(calibration_square):
-    return cv2.findHomography(calibration_square, goal_square)
 
 def flatten_plane_and_intersection(plane, intersection):
     pass
@@ -186,22 +231,25 @@ def create_kernel(kernel_size, mode='vertical'):
 
     print(kernel)
 
-window_name = "Circle detection testing"
+def main():
+    window_name = "Circle detection testing"
 
-THRESHOLD_MIN = 40
-THRESHOLD_MAX = 255
+    THRESHOLD_MIN = 40
+    THRESHOLD_MAX = 255
 
-MIN_AREA = 1000
-MAX_AREA = 1000000
+    MIN_AREA = 1000
+    MAX_AREA = 1000000
 
-MIN_ASPECT_RATIO = 2 / 3 # less than 1
-MIN_BOUNDING_RECT_AREA = 0.5 # must be approximately a circle within the rectangle
+    MIN_ASPECT_RATIO = 2 / 3 # less than 1
+    MIN_BOUNDING_RECT_AREA = 0.5 # must be approximately a circle within the rectangle
 
-create_kernel(5)
+    create_kernel(5)
 
-cv2.namedWindow(window_name)
-cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
-cv2.createTrackbar("Threshold Max", window_name, THRESHOLD_MAX, 255, set_threshold_max)
-cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: create_kernel(x * 2 + 1))
+    cv2.namedWindow(window_name)
+    cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
+    cv2.createTrackbar("Threshold Max", window_name, THRESHOLD_MAX, 255, set_threshold_max)
+    cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: create_kernel(x * 2 + 1))
 
-use_video_capture()
+    use_video_capture()
+
+test_homography()
