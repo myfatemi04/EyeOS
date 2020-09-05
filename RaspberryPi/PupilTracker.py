@@ -39,6 +39,22 @@ def test_homography():
     cv2.imshow("Visualization", board)
     cv2.waitKey(0)
 
+def test_solvepnp():
+    # Data type must be float64
+    object_points = np.array([[0, 0, 0], [0, 10, 0], [0, 100, 0], [100, 100, 0], [100, 0, 0]], dtype=np.float64)
+
+    image_points = np.array([[0, 0], [0, 1], [0, 10], [10, 10], [10, 0]], dtype=np.float64)
+    image_points += np.array([[64, 64]])
+
+    dist_coeffs = np.zeros((5,))
+
+    ret, rotation, translation = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
+    print(f"""Rotation
+{rotation}
+
+Translation
+{translation}""")
+
 kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
 
 center_x = center_y = 64
@@ -252,4 +268,4 @@ def main():
 
     use_video_capture()
 
-test_homography()
+test_solvepnp()
