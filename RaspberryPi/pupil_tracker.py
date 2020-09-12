@@ -1,4 +1,5 @@
 import cv2
+import math
 import numpy as np
 import time
 
@@ -30,12 +31,67 @@ camera_matrix = create_camera_matrix(focal_x, focal_y, center_x, center_y)
 
 marker_distance = 2
 
+def get_relative_vector(eye_to_camera, eye_radius, angle_from_camera):
+    """Gets a gaze vector based on the angle between the pupil, camera, and center of the eye.
+    Gaze vector is such that the line from the eye origin to the camera is the X axis.
+    The eye origin is the origin of the vector.
+
+    Args:
+        eye_to_camera (float): Distance from eye to camera (2D center of eye)
+        eye_radius (float): Radius of eye
+        angle_from_camera (float): Angle CVP, where C = center of eye, V = camera, P = pupil
+
+    Note: by "center" of eye, we mean the point of intersection between the line connecting
+          the origin of the eye sphere and the camera, and the eye sphere.
+
+    Returns:
+        [type]: [description]
+    """
+
+    eye_origin_to_camera = eye_to_camera + eye_radius
+
+    camera_to_right = eye_origin_to_camera * math.cos(angle_from_camera)
+    eye_origin_to_right = eye_origin_to_camera * math.sin(angle_from_camera)
+
+    pupil_to_right = (eye_radius ** 2 - eye_origin_to_right ** 2) ** 0.5
+    camera_to_pupil = camera_to_right - pupil_to_right
+
+    x = eye_origin_to_camera - camera_to_pupil * math.cos(angle_from_camera)
+    y = camera_to_pupil * math.sin(angle_from_camera)
+
+    return (x,  y)
+
 ### REFERENCES
 # https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html?highlight=findhomography
 #
 
-def estimate_gaze_vector(eye_img):
-    pass
+def estimate_gaze_vector(eye_img, eye_center=(1920//2, 1080//2), eye_diameter=446):
+    pupil_contours = find_pupils(eye_img)
+
+    if len(pupil_contours) == 0:
+        return None
+
+    pupil_contour = pupil_contours[0]
+    moments = cv2.moments(pupil_contour)
+
+    if moments['00'] == 0:
+        # No possible centroid found
+        return None
+
+    # Pupil centroid
+    # Reference: https://www.learnopencv.com/find-center-of-blob-centroid-using-opencv-cpp-python/
+    pupil_image_x = moments['m10'] / moments['m00']
+    pupil_image_y = moments['m01'] / moments['m00']
+
+    eye_center_x, eye_center_y = eye_center
+
+    pupil_width = 65
+
+    image_offset_x = pupil_image_x - eye_center_x
+    image_offset_y = pupil_image_y - eye_center_y
+
+    pupil_distance = ((image_offset_x ** 2) + (image_offset_y ** 2)) ** 0.5
+
 
 def dist(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
@@ -89,9 +145,9 @@ def use_video_capture():
     video_capture = cv2.VideoCapture(1)
     
     while True:
-        _, frame = video_capture.read()
+        _, image = video_capture.read()
 
-        find_pupils(frame)
+        find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
 
         # option to exit by pressing Q
         if cv2.waitKey(1) & 0xFF == ord('q'):
