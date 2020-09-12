@@ -168,13 +168,27 @@ def use_pi():
     while True:
         image = stream.read()
         
-        relative_vector = estimate_gaze_vector(image)
+        relative_vector = estimate_gaze_vector(image) or (0, 0)
         
         cv2.imshow(window_name, image)
         
-        print(relative_vector)
+        # print(relative_vector)
         
+        visualization = np.zeros((500, 500, 3), np.uint8)
+        vis_eye_location = (250, 250)
+        vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
+        
+        # Draw "eye"
+        visualization = cv2.circle(image, vis_eye_location, 50, (255, 255, 255), -1)
+        
+        # Gaze line
+        visualization = cv2.line(visualization, vis_eye_location, vis_gaze_target, (0, 255, 0), 10)
+        
+        cv2.imshow("Gaze Visualization", visualization)
         # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
+        
+        time.sleep(0.5)
+        print("Frame step")
 
 def use_video_capture():
     video_capture = cv2.VideoCapture(1)
@@ -198,11 +212,13 @@ def set_kernel_size(n):
 
 def main():
     set_kernel_size(5)
-
+    
+    '''
     cv2.namedWindow(window_name)
     cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
     cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: set_kernel_size(x * 2 + 1))
-
+    '''
+    
     use_pi()
     
 main()
