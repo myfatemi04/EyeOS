@@ -5,8 +5,8 @@ import time
 
 from collections import namedtuple
 
-from .functions import find_pupils
-from .create import create_kernel, create_camera_matrix
+from functions import find_pupils
+from create import create_kernel, create_camera_matrix
 
 window_name = "Gaze Tracker"
 
@@ -22,10 +22,12 @@ sensor_width = 128
 left_offset = -1
 right_offset = 1
 
-kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+kernel = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.uint8)
 
 center_x = center_y = 64
 focal_x = focal_y = 1
+
+image_size = (640, 480)
 
 camera_matrix = create_camera_matrix(focal_x, focal_y, center_x, center_y)
 
@@ -65,8 +67,8 @@ def get_relative_vector(eye_to_camera, eye_radius, angle_from_camera):
 # https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html?highlight=findhomography
 #
 
-def estimate_gaze_vector(eye_img, eye_center=(1920//2, 1080//2), eye_diameter=446):
-    pupil_contours = find_pupils(eye_img)
+def estimate_gaze_vector(eye_img, eye_center=(image_size[0] // 2, image_size[1]//2)):
+    pupil_contours = find_pupils(eye_img, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
 
     if len(pupil_contours) == 0:
         return None
@@ -74,7 +76,7 @@ def estimate_gaze_vector(eye_img, eye_center=(1920//2, 1080//2), eye_diameter=44
     pupil_contour = pupil_contours[0]
     moments = cv2.moments(pupil_contour)
 
-    if moments['00'] == 0:
+    if moments['m00'] == 0:
         # No possible centroid found
         return None
 
@@ -85,13 +87,45 @@ def estimate_gaze_vector(eye_img, eye_center=(1920//2, 1080//2), eye_diameter=44
 
     eye_center_x, eye_center_y = eye_center
 
-    pupil_width = 65
-
     image_offset_x = pupil_image_x - eye_center_x
     image_offset_y = pupil_image_y - eye_center_y
 
     pupil_distance = ((image_offset_x ** 2) + (image_offset_y ** 2)) ** 0.5
+    
+    # http://www.kumantech.com/kuman-5mp-1080p-hd-camera-module-for-raspberry-pi-for-raspberry-pi-3-model-b-b-a-rpi-2-1-sc15_p0063.htm
+    field_of_view_degrees = 72.4
+    field_of_view_radians = 1.263618378443895 # (math.pi * field_of_view_degrees / 180)
+    field_of_view_pixels = 2202.9071700823 # (1080 ** 2 + 1920 ** 2) ** 0.5
+    
+    angle_from_camera = get_angle_from_camera(pupil_distance, field_of_view_radians, field_of_view_pixels)
+    rotation_angle = math.atan(image_offset_y / image_offset_x)
+    
+    # these are in cm
+    eye_to_camera = 4
+    eye_radius = 3.75
+    
+    relative_vector = get_relative_vector(eye_to_camera, eye_radius, angle_from_camera)
+    
+    return relative_vector
+    
+def get_2d_rotation_matrix(angle):
+    # linear transformation = X(i) + Y(j) = X * ix + X * iy + Y * jx + Y * jy
+    # usually, ix = 1, iy = 0; jx = 0, jy = 1. However, by changing
+    # the basis vectors, we can make a rotation
+    
+    ix = math.cos(angle)
+    iy = math.sin(angle)
+    
+    jx = -math.sin(angle)
+    jy = math.cos(angle)
+    
+    return np.array([
+        [ix, jx],
+        [iy, jy]
+    ])
 
+def get_angle_from_camera(distance_pixels, field_of_view_radians, field_of_view_pixels):
+    return (distance_pixels / field_of_view_pixels) * field_of_view_radians
 
 def dist(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
@@ -123,23 +157,24 @@ def calculate_ray_plane_intersection(ray, plane):
     pass
 
 def use_pi():
-    from picamera.array import PiRGBArray
-    from picamera import PiCamera
-
-    camera = PiCamera()
-    camera.resolution = (640, 480)
-    camera.framerate = 90
-
-    capture = PiRGBArray(camera, size=(640, 480))
+    from imutils.video import VideoStream
+    
+    stream = VideoStream(usePiCamera=True).start()
 
     # Let the camera warm up
-    time.sleep(0.1)
-
+    time.sleep(2.0)
+    
     # Capture frames in a stream
-    for frame in camera.capture_continuous(capture, format="rgb", use_video_part=True):
-        # Get the NumPy array
-        image = frame.array
-        find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
+    while True:
+        image = stream.read()
+        
+        relative_vector = estimate_gaze_vector(image)
+        
+        cv2.imshow(window_name, image)
+        
+        print(relative_vector)
+        
+        # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
 
 def use_video_capture():
     video_capture = cv2.VideoCapture(1)
@@ -168,4 +203,6 @@ def main():
     cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
     cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: set_kernel_size(x * 2 + 1))
 
-    use_video_capture()
+    use_pi()
+    
+main()

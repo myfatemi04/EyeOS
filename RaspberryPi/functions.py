@@ -60,7 +60,7 @@ def find_pupils(image, threshold_min, kernel, min_bounding_rect_area, min_area, 
     image = cv2.erode(image, kernel, iterations=1)
     image = cv2.dilate(image, kernel, iterations=2)
 
-    contours, _ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    ret, contours, _ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     possible_eyes = []
     for contour in contours:
