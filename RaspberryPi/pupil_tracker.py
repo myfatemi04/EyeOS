@@ -104,11 +104,15 @@ def estimate_gaze_vector(eye_img, eye_center=(image_size[0] // 2, image_size[1]/
     if image_offset_x == 0:
         rotation_angle = math.pi / 2
     else:
-        rotation_angle = math.atan(image_offset_y / image_offset_x)
+        rotation_angle = math.asin(image_offset_y / pupil_distance)
+
+        if image_offset_x < 0:
+            # angle should be reflected
+            rotation_angle = math.pi - rotation_angle
     
     # these are in cm
-    eye_to_camera = 4
-    eye_radius = 3.75
+    eye_to_camera = 10
+    eye_radius = 1.5
     
     rx, ry = get_relative_vector(eye_to_camera, eye_radius, angle_from_camera)
     
@@ -202,7 +206,7 @@ def process_image(image):
         
         visualization = np.zeros((500, 500, 3), np.uint8)
         vis_eye_location = (250, 250)
-        vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
+        vis_gaze_target = (250 + int(relative_vector[0] * 50), 250 + int(relative_vector[1] * 50))
         
         # Draw "eye"
         visualization = cv2.circle(visualization, vis_eye_location, 50, (255, 255, 255), -1)
@@ -233,6 +237,9 @@ def use_simulator():
     while True:
         # 640 x 480 empty image
         image = np.zeros((480, 640, 3), np.uint8)
+
+        # fill with grey
+        image[:, :] = [127, 127, 127]
         
         # draw eye circle
         image = cv2.circle(image, (320, 240), 100, (255, 255, 255), -1)
@@ -256,11 +263,11 @@ def set_kernel_size(n):
 
 def set_simulated_pupil_x(x):
     global simulated_pupil_x
-    simulated_pupil_x = x - 50
+    simulated_pupil_x = 2 * x - 100
 
 def set_simulated_pupil_y(y):
     global simulated_pupil_y
-    simulated_pupil_y = y - 50
+    simulated_pupil_y = 2 * y - 100
 
 def main():
     set_kernel_size(5)
