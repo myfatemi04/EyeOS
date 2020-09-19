@@ -104,9 +104,17 @@ def estimate_gaze_vector(eye_img, eye_center=(image_size[0] // 2, image_size[1]/
     eye_to_camera = 4
     eye_radius = 3.75
     
-    relative_vector = get_relative_vector(eye_to_camera, eye_radius, angle_from_camera)
+    rx, ry = get_relative_vector(eye_to_camera, eye_radius, angle_from_camera)
     
-    return relative_vector
+    # looking at the eye head-on, x = depth, y = side to side, z = up down
+    relative_vector_flat = (rx, ry, 0)
+    
+    # the 2D projection of this is (y, 0)
+    # we rotate this by rotation_angle to get (ycostheta, ysintheta)
+    relative_vector = (rx, ry * math.cos(rotation_angle), ry * math.sin(rotation_angle)) 
+    
+    return {'relative_vector': relative_vector, 'pupil_location': (pupil_image_x, pupil_image_y),
+            'angle_from_camera': angle_from_camera}
     
 def get_2d_rotation_matrix(angle):
     # linear transformation = X(i) + Y(j) = X * ix + X * iy + Y * jx + Y * jy
@@ -159,7 +167,7 @@ def calculate_ray_plane_intersection(ray, plane):
 def use_pi():
     from imutils.video import VideoStream
     
-    stream = VideoStream(usePiCamera=True).start()
+    stream = VideoStream(usePiCamera=True, resolution=image_size).start()
 
     # Let the camera warm up
     time.sleep(2.0)
@@ -168,27 +176,35 @@ def use_pi():
     while True:
         image = stream.read()
         
-        relative_vector = estimate_gaze_vector(image) or (0, 0)
+        gaze_info = estimate_gaze_vector(image)
         
-        cv2.imshow(window_name, image)
+        if gaze_info is not None:
+            relative_vector = gaze_info['relative_vector']
+            eye_x, eye_y = gaze_info['pupil_location']
+            eye_x = int(eye_x)
+            eye_y = int(eye_y)
+            
+            image = cv2.drawMarker(image, (eye_x, eye_y), (255, 255, 255))
+            
+            # print(relative_vector)
+            
+            visualization = np.zeros((500, 500, 3), np.uint8)
+            vis_eye_location = (250, 250)
+            vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
+            
+            # Draw "eye"
+            visualization = cv2.circle(visualization, vis_eye_location, 50, (255, 255, 255), -1)
+            
+            # Gaze line
+            visualization = cv2.line(visualization, vis_eye_location, vis_gaze_target, (0, 255, 0), 10)
+            
+            cv2.imshow("Top-down gaze visualization", visualization)
+            # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
         
-        # print(relative_vector)
+        cv2.imshow("Video stream", image)
         
-        visualization = np.zeros((500, 500, 3), np.uint8)
-        vis_eye_location = (250, 250)
-        vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
-        
-        # Draw "eye"
-        visualization = cv2.circle(image, vis_eye_location, 50, (255, 255, 255), -1)
-        
-        # Gaze line
-        visualization = cv2.line(visualization, vis_eye_location, vis_gaze_target, (0, 255, 0), 10)
-        
-        cv2.imshow("Gaze Visualization", visualization)
-        # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
-        
-        time.sleep(0.5)
-        print("Frame step")
+        if cv2.waitKey(1) & 0xFF == 'q':
+            break
 
 def use_video_capture():
     video_capture = cv2.VideoCapture(1)
