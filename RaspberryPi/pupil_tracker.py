@@ -13,7 +13,7 @@ window_name = "Gaze Tracker"
 THRESHOLD_MIN = 40
 
 MIN_AREA = 1000
-MAX_AREA = 1000000
+MAX_AREA = 4000
 
 MIN_ASPECT_RATIO = 2 / 3 # less than 1
 MIN_BOUNDING_RECT_AREA = 0.5 # must be approximately a circle within the rectangle
@@ -32,6 +32,8 @@ image_size = (640, 480)
 camera_matrix = create_camera_matrix(focal_x, focal_y, center_x, center_y)
 
 marker_distance = 2
+
+simulated_pupil_x = simulated_pupil_y = 0
 
 def get_relative_vector(eye_to_camera, eye_radius, angle_from_camera):
     """Gets a gaze vector based on the angle between the pupil, camera, and center of the eye.
@@ -98,7 +100,11 @@ def estimate_gaze_vector(eye_img, eye_center=(image_size[0] // 2, image_size[1]/
     field_of_view_pixels = 2202.9071700823 # (1080 ** 2 + 1920 ** 2) ** 0.5
     
     angle_from_camera = get_angle_from_camera(pupil_distance, field_of_view_radians, field_of_view_pixels)
-    rotation_angle = math.atan(image_offset_y / image_offset_x)
+
+    if image_offset_x == 0:
+        rotation_angle = math.pi / 2
+    else:
+        rotation_angle = math.atan(image_offset_y / image_offset_x)
     
     # these are in cm
     eye_to_camera = 4
@@ -176,35 +182,38 @@ def use_pi():
     while True:
         image = stream.read()
         
-        gaze_info = estimate_gaze_vector(image)
-        
-        if gaze_info is not None:
-            relative_vector = gaze_info['relative_vector']
-            eye_x, eye_y = gaze_info['pupil_location']
-            eye_x = int(eye_x)
-            eye_y = int(eye_y)
-            
-            image = cv2.drawMarker(image, (eye_x, eye_y), (255, 255, 255))
-            
-            # print(relative_vector)
-            
-            visualization = np.zeros((500, 500, 3), np.uint8)
-            vis_eye_location = (250, 250)
-            vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
-            
-            # Draw "eye"
-            visualization = cv2.circle(visualization, vis_eye_location, 50, (255, 255, 255), -1)
-            
-            # Gaze line
-            visualization = cv2.line(visualization, vis_eye_location, vis_gaze_target, (0, 255, 0), 10)
-            
-            cv2.imshow("Top-down gaze visualization", visualization)
-            # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
-        
-        cv2.imshow("Video stream", image)
-        
+        process_image(image)
+
         if cv2.waitKey(1) & 0xFF == 'q':
             break
+
+def process_image(image):
+    gaze_info = estimate_gaze_vector(image)
+        
+    if gaze_info is not None:
+        relative_vector = gaze_info['relative_vector']
+        eye_x, eye_y = gaze_info['pupil_location']
+        eye_x = int(eye_x)
+        eye_y = int(eye_y)
+        
+        image = cv2.drawMarker(image, (eye_x, eye_y), (255, 255, 255))
+        
+        # print(relative_vector)
+        
+        visualization = np.zeros((500, 500, 3), np.uint8)
+        vis_eye_location = (250, 250)
+        vis_gaze_target = (250 + int(relative_vector[0] * 20), 250 + int(relative_vector[1] * 20))
+        
+        # Draw "eye"
+        visualization = cv2.circle(visualization, vis_eye_location, 50, (255, 255, 255), -1)
+        
+        # Gaze line
+        visualization = cv2.line(visualization, vis_eye_location, vis_gaze_target, (0, 255, 0), 10)
+        
+        cv2.imshow("Top-down gaze visualization", visualization)
+        # find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
+    
+    cv2.imshow(window_name, image)
 
 def use_video_capture():
     video_capture = cv2.VideoCapture(1)
@@ -212,7 +221,26 @@ def use_video_capture():
     while True:
         _, image = video_capture.read()
 
-        find_pupils(image, THRESHOLD_MIN, kernel, MIN_BOUNDING_RECT_AREA, MIN_AREA, MAX_AREA, MIN_ASPECT_RATIO)
+        process_image(image)
+
+        # option to exit by pressing Q
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+def use_simulator():
+    global simulated_pupil_x, simulated_pupil_y
+
+    while True:
+        # 640 x 480 empty image
+        image = np.zeros((480, 640, 3), np.uint8)
+        
+        # draw eye circle
+        image = cv2.circle(image, (320, 240), 100, (255, 255, 255), -1)
+
+        # draw pupil
+        image = cv2.circle(image, (320 + simulated_pupil_x, 240 + simulated_pupil_y), 20, (0, 0, 0), -1)
+
+        process_image(image)
 
         # option to exit by pressing Q
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -226,15 +254,24 @@ def set_kernel_size(n):
     global kernel
     kernal = create_kernel(n)
 
+def set_simulated_pupil_x(x):
+    global simulated_pupil_x
+    simulated_pupil_x = x - 50
+
+def set_simulated_pupil_y(y):
+    global simulated_pupil_y
+    simulated_pupil_y = y - 50
+
 def main():
     set_kernel_size(5)
     
-    '''
     cv2.namedWindow(window_name)
-    cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
-    cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: set_kernel_size(x * 2 + 1))
-    '''
+    # cv2.createTrackbar("Threshold Min", window_name, THRESHOLD_MIN, 255, set_threshold_min)
+    # cv2.createTrackbar("Kernel size", window_name, 2, 5, lambda x: set_kernel_size(x * 2 + 1))
+
+    cv2.createTrackbar("Simulated Pupil X", window_name, 50, 100, set_simulated_pupil_x)
+    cv2.createTrackbar("Simulated Pupil Y", window_name, 50, 100, set_simulated_pupil_y)
     
-    use_pi()
+    use_simulator()
     
 main()
