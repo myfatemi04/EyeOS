@@ -7,6 +7,9 @@ import numpy as np
 find_faces = dlib.get_frontal_face_detector()
 find_landmarks = dlib.shape_predictor('eye_tracking/trained_models/shape_predictor_68_face_landmarks.dat')
 
+def mid(a, b):
+	return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+
 class EyeDetection:
 	def __init__(self, frame: np.ndarray, points: list, iris_threshold__old: int):
 		min_x = min(points, key=lambda p: p[0])[0]
@@ -16,17 +19,21 @@ class EyeDetection:
 
 		margin = 5
 
+		self.points = points
 		self.bounding_box = (min_x, min_y, max_x, max_y)
 		self.original_frame = frame
 		self.eye_frame_gray = cv2.cvtColor(frame[min_y - margin:max_y + margin, min_x - margin:max_x + margin], cv2.COLOR_BGR2GRAY)
-		
-		# iris_threshold = find_best_iris_threshold(self.eye_frame)
-		
-		iris = find_iris(self.eye_frame_gray) # , iris_threshold)
+
+		iris = find_iris(self.eye_frame_gray)
 		if iris is not None:
 			self.iris = iris[0] + min_x - margin, iris[1] + min_y - margin
 		else:
 			self.iris = None
+	
+	@property
+	def center(self):
+		x, y = mid(self.points[0], self.points[3])
+		return int(x), int(y)
 
 def find_best_iris_threshold(eye_frame_gray: np.ndarray):
 	average_iris_size = 0.48
@@ -47,7 +54,7 @@ def find_best_iris_threshold(eye_frame_gray: np.ndarray):
 	
 	return best_threshold
 
-def find_iris(eye_frame_gray: np.ndarray, threshold: int = 128):
+def find_iris(eye_frame_gray: np.ndarray, threshold: int = 30):
 	kernel = np.ones((3, 3), np.uint8)
 	iris_frame = cv2.bilateralFilter(eye_frame_gray, 10, 15, 15)
 	iris_frame = cv2.erode(iris_frame, kernel, iterations=3)
@@ -64,11 +71,11 @@ def find_iris(eye_frame_gray: np.ndarray, threshold: int = 128):
 		moments = cv2.moments(contours[-1])
 		x = int(moments['m10'] / moments['m00'])
 		y = int(moments['m01'] / moments['m00'])
-		# cv2.circle(iris_frame, (x, y), 2, (0, 0, 255), -1)
+		cv2.circle(iris_frame, (x, y), 2, (0, 0, 255), -1)
 	except (IndexError, ZeroDivisionError):
 		return None
 	
-	# cv2.imshow('iris', iris_frame)
+	cv2.imshow('iris', iris_frame)
 
 	return (x, y, num_black, num_pixels)
 
