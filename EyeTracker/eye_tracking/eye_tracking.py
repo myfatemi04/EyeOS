@@ -127,26 +127,26 @@ class FaceTracker(object):
         return _midpoint(pxy(self.landmarks.part(42)), pxy(self.landmarks.part(45)))
 
     ## uses pupil tracing
-    def get_left_pupil_offset(self):
+    def get_left_offset_pupil(self):
         if self.eye_left and self.pupils_located:
             pupil_exact = self.left_pupil()
             center_exact = self.left_center()
             return center_exact[0] - pupil_exact[0], center_exact[1] - pupil_exact[1]
 
-    def get_right_pupil_offset(self):
+    def get_right_offset_pupil(self):
         if self.eye_right and self.pupils_located:
             pupil_exact = self.right_pupil()
             center_exact = self.right_center()
             return center_exact[0] - pupil_exact[0], center_exact[1] - pupil_exact[1]
     
     ## uses eyelid tracing
-    def get_left_offset(self):
+    def get_left_offset_eyelid(self):
         if self.eye_left and self.pupils_located:
             left_trace = self.left_trace()
             left_center = self.left_center()
             return left_center[0] - left_trace[0], left_center[1] - left_trace[1]
 
-    def get_right_offset(self):
+    def get_right_offset_eyelid(self):
         if self.eye_right and self.pupils_located:
             right_trace = self.right_trace()
             right_center = self.right_center()
@@ -155,14 +155,17 @@ class FaceTracker(object):
     ## finds how far off the tracepoint is from the center of the eye
     def get_average_eye_offset(self, mode='eyelid'):
         if mode == 'eyelid':
-            left = self.get_left_offset()
-            right = self.get_right_offset()
+            left_offset = self.get_left_offset_eyelid()
+            right_offset = self.get_right_offset_eyelid()
         elif mode == 'pupil':
-            left = self.get_left_pupil_offset()
-            right = self.get_right_pupil_offset()
-        if left and right:
-            eye_dist = self.get_eye_dist()
-            return (left[0] + right[0])/(2 * eye_dist), (left[1] + right[1])/(2 * eye_dist)
+            left_offset = self.get_left_offset_pupil()
+            right_offset = self.get_right_offset_pupil()
+
+        if not (left_offset and right_offset):
+            return None
+
+        eye_dist = self.get_eye_dist()
+        return (left_offset[0] + right_offset[0]) / (2 * eye_dist), (left_offset[1] + right_offset[1]) / (2 * eye_dist)
 
     ## used for proportions
     def get_eye_dist(self):

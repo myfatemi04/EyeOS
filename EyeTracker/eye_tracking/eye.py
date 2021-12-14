@@ -41,7 +41,7 @@ class Eye(object):
         mask = np.full((height, width), 255, np.uint8)
         cv2.fillPoly(mask, [region], (0, 0, 0))
 
-        eye = cv2.bitwise_not(black_frame, frame.copy(), mask=mask)
+        eye = cv2.bitwise_not(black_frame, mask=mask)
         
         margin = 5
         min_x = np.min(region[:, 0]) - margin
