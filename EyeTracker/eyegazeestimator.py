@@ -22,7 +22,7 @@ class EyeGazeEstimator:
 		pass
 
 class SmoothValue:
-	def __init__(self, value=0, weight=0.5):
+	def __init__(self, value=0, weight=0.8):
 		self.value = value
 		self.weight = weight
 
@@ -31,7 +31,7 @@ class SmoothValue:
 		return int(self.value)
 
 	def update(self, new_value):
-		self.value = self.value * self.weight + new_value * (1 - self.weight)
+		self.value = self.value * (1 - self.weight) + new_value * self.weight
 
 def transform_gaze(left_offset, right_offset, calibrations: dict):
 	average_offset = mid(left_offset, right_offset)
@@ -57,6 +57,11 @@ lix = SmoothValue()
 liy = SmoothValue()
 rix = SmoothValue()
 riy = SmoothValue()
+
+lox = SmoothValue()
+loy = SmoothValue()
+rox = SmoothValue()
+roy = SmoothValue()
 
 calibrations = {}
 required_calibrations = [
@@ -103,9 +108,14 @@ while True:
 		left_offset = (left.center[0] - left.iris[0], left.points[1][1] - left.center[1])
 		right_offset = (right.center[0] - right.iris[0], right.points[1][1] - right.center[1])
 
+		lox.update(left_offset[0])
+		loy.update(left_offset[1])
+		rox.update(right_offset[0])
+		roy.update(right_offset[1])
+
 		""" If we're calibrated, then we can estimate the gaze """
 		if len(calibrations) == len(required_calibrations):
-			horizontal_proportion, vertical_proportion = transform_gaze(left_offset, right_offset, calibrations)
+			horizontal_proportion, vertical_proportion = transform_gaze((lox.i, loy.i), (rox.i, roy.i), calibrations)
 
 			dx = 2
 
@@ -131,11 +141,13 @@ while True:
 
 			cv2.imshow("analytics", analytics_canvas)
 
-			if vertical_proportion > 0.8:
-				pg.scroll(int(-(vertical_proportion - 0.8) * 60))
+			pg.moveTo(1920 * horizontal_proportion, 1080 * vertical_proportion, duration=0, tween=pg.easeInOutCubic)
 
-			elif vertical_proportion < 0.2:
-				pg.scroll(int((0.2 - vertical_proportion) * 120))
+			# if vertical_proportion > 0.8:
+			# 	pg.scroll(int(-(vertical_proportion - 0.8) * 60))
+
+			# elif vertical_proportion < 0.2:
+			# 	pg.scroll(int((0.2 - vertical_proportion) * 120))
 
 			# pg.moveTo(int(horizontal_proportion * 1920), int(vertical_proportion * 1080), 0.2, pg.easeInOutCubic)
 		elif time.time() > next_calibration_time and prev_calibration_time != next_calibration_time:
