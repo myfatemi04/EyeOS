@@ -54,11 +54,12 @@ def find_best_iris_threshold(eye_frame_gray: np.ndarray):
 	
 	return best_threshold
 
-def find_iris(eye_frame_gray: np.ndarray, threshold: int = 30):
+def find_iris(eye_frame_gray: np.ndarray, threshold: int = 50):
 	kernel = np.ones((3, 3), np.uint8)
 	iris_frame = cv2.bilateralFilter(eye_frame_gray, 10, 15, 15)
-	iris_frame = cv2.erode(iris_frame, kernel, iterations=3)
+	# iris_frame = cv2.erode(iris_frame, kernel, iterations=3)
 	iris_frame = cv2.equalizeHist(iris_frame)
+
 	iris_frame = 255 - cv2.threshold(iris_frame, threshold, 255, cv2.THRESH_BINARY)[1]
 
 	contours, _ = cv2.findContours(iris_frame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -74,7 +75,7 @@ def find_iris(eye_frame_gray: np.ndarray, threshold: int = 30):
 		cv2.circle(iris_frame, (x, y), 2, (0, 0, 255), -1)
 	except (IndexError, ZeroDivisionError):
 		return None
-	
+		
 	cv2.imshow('iris', iris_frame)
 
 	return (x, y, num_black, num_pixels)
