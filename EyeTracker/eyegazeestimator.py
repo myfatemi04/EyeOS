@@ -72,9 +72,14 @@ next_calibration_time = time.time() + 5
 
 pg.FAILSAFE = False
 
+analytics_canvas = np.zeros((480, 640, 3), np.uint8)
+
+frame_number = 0
+
 cap = cv2.VideoCapture(0)
 while True:
 	ret, frame = cap.read()
+	frame_number += 1
 
 	all_eyes = find_all_eyes(frame, 50)
 	for (left, right) in all_eyes:
@@ -86,11 +91,11 @@ while True:
 
 		lix.update(left.iris[0])
 		liy.update(left.iris[1])
-		cv2.circle(frame, (lix.i, liy.i), 2, (0, 0, 255), 2)
+		cv2.circle(frame, left.iris, 2, (0, 0, 255), 2)
 
 		rix.update(right.iris[0])
 		riy.update(right.iris[1])
-		cv2.circle(frame, (rix.i, riy.i), 2, (0, 0, 255), 2)
+		cv2.circle(frame, right.iris, 2, (0, 0, 255), 2)
 
 		cv2.circle(frame, left.center, 2, (0, 255, 0), 2)
 		cv2.circle(frame, right.center, 2, (0, 255, 0), 2)
@@ -101,6 +106,30 @@ while True:
 		""" If we're calibrated, then we can estimate the gaze """
 		if len(calibrations) == len(required_calibrations):
 			horizontal_proportion, vertical_proportion = transform_gaze(left_offset, right_offset, calibrations)
+
+			dx = 2
+
+			analytics_frame_idx = frame_number % (640 // dx)
+
+			x = analytics_frame_idx * dx
+			top_y = 360
+
+			cv2.rectangle(analytics_canvas, (x, 0), (x + dx, 480), (0, 0, 0), -1)
+			# draw horizontal position
+			# draw vertical position
+			cv2.rectangle(analytics_canvas, \
+				(x, top_y - int(vertical_proportion * 240)),
+				(x + dx, top_y - int(vertical_proportion * 240) - 5),
+				(0, 0, 255),
+			-1)
+			
+			cv2.rectangle(analytics_canvas, \
+				(x, top_y - int(horizontal_proportion * 240)),
+				(x + dx, top_y - int(horizontal_proportion * 240 - 5)),
+				(255, 0, 0),
+			-1)
+
+			cv2.imshow("analytics", analytics_canvas)
 
 			if vertical_proportion > 0.8:
 				pg.scroll(int(-(vertical_proportion - 0.8) * 60))
